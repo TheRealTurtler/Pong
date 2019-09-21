@@ -190,9 +190,11 @@ int checkKeysPressed() {
 //This should be the same on both operating systems
 #define EXIT_BUTTON 27 //ESC
 
-// Spielfeldgroesse
-int CONSOLE_WIDTH = 80;
-int CONSOLE_HEIGHT = 32;
+// Konsolengroesse (am besten ungerade, damit Ball in der Mitte starten kann)
+int CONSOLE_WIDTH = 81;
+int CONSOLE_HEIGHT = 33; // Spielfeld + Header
+
+// Anzahl an Zeilen ueber dem Spielfeld
 int HEADER_HEIGHT = 2;
 
 // ============================================= STRUCTS =================================================================== //
@@ -311,13 +313,19 @@ int main() {
 
 	player[0].pos = (CONSOLE_WIDTH - player[0].length) / 2;
 	player[1].pos = (CONSOLE_WIDTH - player[1].length) / 2;
-
+	// TODO >> player.length gerade/ ungerade (Spielfeldbreite ungerade -> Ball in der Mitte, aber Spieler nicht)
+	
+	// Debug
 	ball.x = 50;
 	ball.y = 10;
+	ball.dest = 0;
 	// ball.prev_x = ball.x;
 	// ball.prev_y = ball.y;
+
+	// Release
+	// ball.x = 1 + (CONSOLE_WIDTH - 2) / 2;
+	// ball.y = HEADER_HEIGHT + (CONSOLE_HEIGHT - HEADER_HEIGHT) / 2;
 	// ball.dest = rand() % 12;
-	ball.dest = 0;
 
 	printSpielfeld(player, &ball, score1, score2);
 
@@ -437,9 +445,9 @@ void printSpielfeld(str_player* player, str_ball* ball, int score1, int score2) 
 	hideCursor();
 
 	// Text fuer Punkte
-	printf("Punkte Spieler 1: ");
-	gotoxy(CONSOLE_WIDTH - 21, 0);
-	printf("Punkte Spieler 2: ");
+	printf("Punkte Spieler 1:");
+	gotoxy(CONSOLE_WIDTH - 20, 0);
+	printf("Punkte Spieler 2:");
 
 	// Punktezahlen ausgeben
 	printScore(score1, score2);
@@ -756,8 +764,8 @@ void printUpdatedPlayer(str_player* player, int id) {
 }
 
 void printScore(int score1, int score2) {
-	gotoxy(19, 0);
+	gotoxy(18, 0);
 	printf("%3d", score1);
-	gotoxy(CONSOLE_WIDTH - 3, 0);
+	gotoxy(CONSOLE_WIDTH - 2, 0);
 	printf("%3d", score2);
 }
