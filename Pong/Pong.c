@@ -220,7 +220,7 @@ void printSpielfeld(str_player* player, str_ball* ball, int score1, int score2);
 void updateBall(str_ball* ball);
 void collisionWall(str_ball* ball);
 int collisionPlayer(str_ball* ball, str_player* player);
-void moveBall(str_ball* ball,  str_player* player);
+void moveBall(str_ball* ball, str_player* player);
 char waitForAnyKey();
 void printUpdatedPlayer(str_player* player, int id);
 void printScore(int score1, int score2);
@@ -304,6 +304,7 @@ int main() {
 	int zeit = 0;
 	int score1 = 0;
 	int score2 = 0;
+	int gameover = 0;
 
 	player[0].length = 10;
 	player[1].length = 10;
@@ -313,14 +314,14 @@ int main() {
 
 	ball.x = 50;
 	ball.y = 10;
-	ball.prev_x = ball.x;
-	ball.prev_y = ball.y;
+	// ball.prev_x = ball.x;
+	// ball.prev_y = ball.y;
 	// ball.dest = rand() % 12;
-	ball.dest = 1;
+	ball.dest = 0;
 
 	printSpielfeld(player, &ball, score1, score2);
 
-	while (1) {
+	while (gameover == 0) {
 		updatePlayer(player);
 		printUpdatedPlayer(player, 0);
 		printUpdatedPlayer(player, 1);
@@ -331,7 +332,7 @@ int main() {
 			switch (collisionPlayer(&ball, player)) {
 			case -1:
 				// Game Over
-				exit(-1);
+				gameover = 1;
 				break;
 			case 0:
 				// Nichts, Ball nicht in Spielernaehe
@@ -472,7 +473,7 @@ void printSpielfeld(str_player* player, str_ball* ball, int score1, int score2) 
 	printPlayer(player, 1);
 
 	// Ball
-	moveBall(&ball, player);
+	moveBall(ball, player);
 }
 
 /*
@@ -557,10 +558,11 @@ void collisionWall(str_ball* ball) {
 }
 
 int collisionPlayer(str_ball* ball, str_player* player) {
-	if (ball->y < HEADER_HEIGHT+2) {
-		//	Kollision mit Spieler 1
-		if (ball->x >= player[0].pos && ball->x <= player[0].pos + (player[0].length) / 5) {
-			//	Mit welcher Richtung kommt der Ball
+	// Ball am oberen Rand
+	if (ball->y <= HEADER_HEIGHT) {
+		// Kollision mit Spieler 1
+		if (ball->x >= player[0].pos && ball->x <= player[0].pos + (player[0].length / 5)) {
+			// Aus welcher Richtung kommt der Ball
 			if (ball->dest < 3) {
 				ball->dest = 3;
 				return 1;
@@ -570,7 +572,7 @@ int collisionPlayer(str_ball* ball, str_player* player) {
 				return 1;
 			}
 		}
-		else if (ball->x >= player[0].pos + (player[0].length) / 5 && ball->x <= player[0].pos + (player[0].length) / 5) {
+		else if (ball->x >= player[0].pos + (player[0].length / 5) && ball->x <= player[0].pos + 2 * (player[0].length / 5)) {
 			if (ball->dest < 3) {
 				ball->dest = 4;
 				return 1;
@@ -580,7 +582,7 @@ int collisionPlayer(str_ball* ball, str_player* player) {
 				return 1;
 			}
 		}
-		else if (ball->x >= player[0].pos + 2 * (player[0].length) / 5 && ball->x <= player[0].pos + 3 * (player[0].length) / 5) {
+		else if (ball->x >= player[0].pos + 2 * (player[0].length / 5) && ball->x <= player[0].pos + 3 * (player[0].length / 5)) {
 			if (ball->dest < 3) {
 				ball->dest = 5;
 				return 1;
@@ -590,7 +592,7 @@ int collisionPlayer(str_ball* ball, str_player* player) {
 				return 1;
 			}
 		}
-		else if (ball->x >= player[0].pos + 3 * (player[0].length) / 5 && ball->x <= player[0].pos + 4 * (player[0].length) / 5) {
+		else if (ball->x >= player[0].pos + 3 * (player[0].length / 5) && ball->x <= player[0].pos + 4 * (player[0].length / 5)) {
 			if (ball->dest < 3) {
 				ball->dest = 4;
 				return 1;
@@ -600,7 +602,7 @@ int collisionPlayer(str_ball* ball, str_player* player) {
 				return 1;
 			}
 		}
-		else if (ball->x >= player[0].pos + 4 * (player[0].length) / 5 && ball->x <= player[0].pos + 5 * (player[0].length) / 5) {
+		else if (ball->x >= player[0].pos + 4 * (player[0].length / 5) && ball->x <= player[0].pos + 5 * (player[0].length / 5)) {
 			if (ball->dest < 3) {
 				ball->dest = 3;
 				return 1;
@@ -609,15 +611,17 @@ int collisionPlayer(str_ball* ball, str_player* player) {
 				ball->dest = 8;
 				return 1;
 			}
-			
+
 		}
 		else {
 			return -1;
 		}
 	}
-	else if (ball->y >  CONSOLE_HEIGHT - 2) {
+
+	// Ball am unteren Rand
+	else if (ball->y >= CONSOLE_HEIGHT) {
 		// Kollision mit Spieler 2
-		if (ball->x >= player[1].pos && ball->x <= player[1].pos + (player[1].length) / 5) {
+		if (ball->x >= player[1].pos && ball->x <= player[1].pos + (player[1].length / 5)) {
 			if (ball->dest > 2 && ball->dest < 6) {
 				ball->dest = 2;
 				return 2;
@@ -627,7 +631,7 @@ int collisionPlayer(str_ball* ball, str_player* player) {
 				return 2;
 			}
 		}
-		else if (ball->x >= player[1].pos + (player[1].length) / 5 && ball->x <= player[1].pos + 2 * (player[1].length) / 5) {
+		else if (ball->x >= player[1].pos + (player[1].length / 5) && ball->x <= player[1].pos + 2 * (player[1].length / 5)) {
 			if (ball->dest > 2 && ball->dest < 6) {
 				ball->dest = 1;
 				return 2;
@@ -637,7 +641,7 @@ int collisionPlayer(str_ball* ball, str_player* player) {
 				return 2;
 			}
 		}
-		else if (ball->x >= player[1].pos + 2 * (player[1].length) / 5 && ball->x <= player[1].pos + 3 * (player[1].length) / 5) {
+		else if (ball->x >= player[1].pos + 2 * (player[1].length / 5) && ball->x <= player[1].pos + 3 * (player[1].length / 5)) {
 			if (ball->dest > 2 && ball->dest < 6) {
 				ball->dest = 0;
 				return 2;
@@ -647,7 +651,7 @@ int collisionPlayer(str_ball* ball, str_player* player) {
 				return 2;
 			}
 		}
-		else if (ball->x >= player[1].pos + 3 * (player[1].length) / 5 && ball->x <= player[1].pos + 1 * (player[1].length) / 5) {
+		else if (ball->x >= player[1].pos + 3 * (player[1].length / 5) && ball->x <= player[1].pos + 4 * (player[1].length / 5)) {
 			if (ball->dest > 2 && ball->dest < 6) {
 				ball->dest = 1;
 				return 2;
@@ -657,7 +661,7 @@ int collisionPlayer(str_ball* ball, str_player* player) {
 				return 2;
 			}
 		}
-		else if (ball->x >= player[1].pos + 1 * (player[1].length) / 5 && ball->x <= player[1].pos + 5 * (player[1].length) / 5) {
+		else if (ball->x >= player[1].pos + 4 * (player[1].length / 5) && ball->x <= player[1].pos + 5 * (player[1].length / 5)) {
 			if (ball->dest > 2 && ball->dest < 6) {
 				ball->dest = 2;
 				return 2;
@@ -666,7 +670,8 @@ int collisionPlayer(str_ball* ball, str_player* player) {
 				ball->dest = 9;
 				return 2;
 			}
-		}else{
+		}
+		else {
 			return -1;
 		}
 	}
@@ -676,7 +681,7 @@ int collisionPlayer(str_ball* ball, str_player* player) {
 }
 
 void moveBall(str_ball* ball, str_player* player) {
-	if (ball->prev_x > 1 && ball->prev_x < CONSOLE_WIDTH - 1 && ball->prev_y > HEADER_HEIGHT && ball->prev_y < CONSOLE_HEIGHT) {
+	if ((ball->prev_x > 1 && ball->prev_x < CONSOLE_WIDTH - 1) && (ball->prev_y > HEADER_HEIGHT && ball->prev_y < CONSOLE_HEIGHT)) {
 		gotoxy(ball->prev_x, ball->prev_y);
 		printf("%c", BLANK);
 	}
@@ -717,12 +722,12 @@ void printUpdatedPlayer(str_player* player, int id) {
 				gotoxy(player[id].prev_pos, HEADER_HEIGHT);
 				printf("%c", BLANK);
 			}
-				gotoxy(player[id].pos + player[id].length - 1, HEADER_HEIGHT);
-				printf("%c", PLAYER_TOP);
+			gotoxy(player[id].pos + player[id].length - 1, HEADER_HEIGHT);
+			printf("%c", PLAYER_TOP);
 		}
 		else if (player[id].pos < player[id].prev_pos) {
-				gotoxy(player[id].pos + 1, HEADER_HEIGHT);
-				printf("%c", PLAYER_TOP);
+			gotoxy(player[id].pos + 1, HEADER_HEIGHT);
+			printf("%c", PLAYER_TOP);
 			if (player[id].prev_pos + player[id].length < CONSOLE_WIDTH) {
 				gotoxy(player[id].prev_pos + player[id].length, HEADER_HEIGHT);
 				printf("%c", BLANK);
@@ -735,12 +740,12 @@ void printUpdatedPlayer(str_player* player, int id) {
 				gotoxy(player[id].prev_pos, CONSOLE_HEIGHT);
 				printf("%c", BLANK);
 			}
-				gotoxy(player[id].pos + player[id].length - 1, CONSOLE_HEIGHT);
-				printf("%c", PLAYER_BOT);
+			gotoxy(player[id].pos + player[id].length - 1, CONSOLE_HEIGHT);
+			printf("%c", PLAYER_BOT);
 		}
 		else if (player[id].pos < player[id].prev_pos) {
-				gotoxy(player[id].pos + 1, CONSOLE_HEIGHT);
-				printf("%c", PLAYER_BOT);
+			gotoxy(player[id].pos + 1, CONSOLE_HEIGHT);
+			printf("%c", PLAYER_BOT);
 			if (player[id].prev_pos + player[id].length < CONSOLE_WIDTH) {
 				gotoxy(player[id].prev_pos + player[id].length, CONSOLE_HEIGHT);
 				printf("%c", BLANK);
@@ -756,5 +761,3 @@ void printScore(int score1, int score2) {
 	gotoxy(CONSOLE_WIDTH - 3, 0);
 	printf("%3d", score2);
 }
-
-// adsgfafsd
