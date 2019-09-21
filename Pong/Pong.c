@@ -192,7 +192,8 @@ int checkKeysPressed() {
 
 // Spielfeldgroesse
 int CONSOLE_WIDTH = 80;
-int CONSOLE_HEIGHT = 30;
+int CONSOLE_HEIGHT = 32;
+int HEADER_HEIGHT = 2;
 
 // ============================================= STRUCTS =================================================================== //
 
@@ -214,14 +215,15 @@ typedef struct {
 
 void printPlayer(str_player* player, int id);
 void printOhneBall();
-void printSpielfeld(str_player* player, str_ball* ball);
+void printSpielfeld(str_player* player, str_ball* ball, int score1, int score2);
 // void movePlayer(str_player* player, int id);
 void updateBall(str_ball* ball);
 void collisionWall(str_ball* ball);
-void collisionPlayer(str_ball* ball, str_player* player);
-void moveBall(str_ball* ball);
+int collisionPlayer(str_ball* ball, str_player* player);
+void moveBall(str_ball* ball,  str_player* player);
 char waitForAnyKey();
 void printUpdatedPlayer(str_player* player, int id);
+void printScore(int score1, int score2);
 
 // ============================================= OS SPEZIFISCHE FUNKTIONEN ================================================= //
 
@@ -237,12 +239,12 @@ void updatePlayer(str_player* player) {
 	// Position Spieler 1 aktualisieren
 	switch (pressed[0]) {
 	case LEFT_ARROW:
-		if (player[0].pos > 1) {
+		if (player[0].pos > 0) {
 			player[0].pos--;
 		}
 		break;
 	case RIGHT_ARROW:
-		if (player[0].pos + player[0].length < CONSOLE_WIDTH - 2) {
+		if (player[0].pos + player[0].length < CONSOLE_WIDTH) {
 			player[0].pos++;
 		}
 		break;
@@ -251,12 +253,12 @@ void updatePlayer(str_player* player) {
 	// Position Spieler 2 aktualisieren
 	switch (pressed[1]) {
 	case 'a':
-		if (player[1].pos > 1) {
+		if (player[1].pos > 0) {
 			player[1].pos--;
 		}
 		break;
 	case 'd':
-		if (player[1].pos + player[1].length < CONSOLE_WIDTH - 2) {
+		if (player[1].pos + player[1].length < CONSOLE_WIDTH) {
 			player[1].pos++;
 		}
 		break;
@@ -300,21 +302,23 @@ int main() {
 	str_player player[2];
 	str_ball ball;
 	int zeit = 0;
+	int score1 = 0;
+	int score2 = 0;
 
-	player[0].length = 1;
-	player[1].length = 1;
+	player[0].length = 10;
+	player[1].length = 10;
 
 	player[0].pos = (CONSOLE_WIDTH - player[0].length) / 2;
 	player[1].pos = (CONSOLE_WIDTH - player[1].length) / 2;
 
-	ball.x = 70;
+	ball.x = 50;
 	ball.y = 10;
 	ball.prev_x = ball.x;
 	ball.prev_y = ball.y;
 	// ball.dest = rand() % 12;
-	ball.dest = 2;
+	ball.dest = 1;
 
-	printSpielfeld(player, &ball);
+	printSpielfeld(player, &ball, score1, score2);
 
 	while (1) {
 		updatePlayer(player);
@@ -324,8 +328,25 @@ int main() {
 		if (clock() - zeit - 1000 > 0) { // Geschwindigkeit Ball
 			updateBall(&ball);
 			collisionWall(&ball);
-			collisionPlayer(&ball, player);
-			moveBall(&ball);
+			switch (collisionPlayer(&ball, player)) {
+			case -1:
+				// Game Over
+				exit(-1);
+				break;
+			case 0:
+				// Nichts, Ball nicht in Spielernaehe
+				break;
+			case 1:
+				// Punkt fuer Spieler 1
+				score1++;
+				break;
+			case 2:
+				// Punkt fuer Spieler 2
+				score2++;
+				break;
+			}
+			printScore(score1, score2);
+			moveBall(&ball, player);
 			zeit = clock();
 		}
 
@@ -401,7 +422,7 @@ void printOhneBall() {
 	printf("%c", WALL);
 }
 
-void printSpielfeld(str_player* player, str_ball* ball) {
+void printSpielfeld(str_player* player, str_ball* ball, int score1, int score2) {
 	// Konsolengroesse aendern
 	setWindowSize(CONSOLE_WIDTH, CONSOLE_HEIGHT);
 
@@ -414,6 +435,16 @@ void printSpielfeld(str_player* player, str_ball* ball) {
 	// Cursor unsichtbar machen
 	hideCursor();
 
+	// Text fuer Punkte
+	printf("Punkte Spieler 1: ");
+	gotoxy(CONSOLE_WIDTH - 21, 0);
+	printf("Punkte Spieler 2: ");
+
+	// Punktezahlen ausgeben
+	printScore(score1, score2);
+
+	printf("\n\n");
+
 	// Spieler oben
 	printPlayer(player, 0);
 
@@ -421,7 +452,7 @@ void printSpielfeld(str_player* player, str_ball* ball) {
 	printf("\n");
 
 	// Spielfeld
-	for (int i = 0; i < CONSOLE_HEIGHT - 1; i++) {
+	for (int i = HEADER_HEIGHT; i < CONSOLE_HEIGHT - 1; i++) {
 		// Zeile mit Ball
 		/*
 		if (i == ball->y) {
@@ -441,7 +472,7 @@ void printSpielfeld(str_player* player, str_ball* ball) {
 	printPlayer(player, 1);
 
 	// Ball
-	moveBall(ball);
+	moveBall(&ball, player);
 }
 
 /*
@@ -525,114 +556,148 @@ void collisionWall(str_ball* ball) {
 	}
 }
 
-void collisionPlayer(str_ball* ball, str_player* player) {
-	if (ball->y < 1) {
+int collisionPlayer(str_ball* ball, str_player* player) {
+	if (ball->y < HEADER_HEIGHT+2) {
 		//	Kollision mit Spieler 1
 		if (ball->x >= player[0].pos && ball->x <= player[0].pos + (player[0].length) / 5) {
 			//	Mit welcher Richtung kommt der Ball
 			if (ball->dest < 3) {
 				ball->dest = 3;
+				return 1;
 			}
 			else {
 				ball->dest = 8;
+				return 1;
 			}
 		}
 		else if (ball->x >= player[0].pos + (player[0].length) / 5 && ball->x <= player[0].pos + (player[0].length) / 5) {
 			if (ball->dest < 3) {
 				ball->dest = 4;
+				return 1;
 			}
 			else {
 				ball->dest = 7;
+				return 1;
 			}
 		}
 		else if (ball->x >= player[0].pos + 2 * (player[0].length) / 5 && ball->x <= player[0].pos + 3 * (player[0].length) / 5) {
 			if (ball->dest < 3) {
 				ball->dest = 5;
+				return 1;
 			}
 			else {
 				ball->dest = 6;
+				return 1;
 			}
 		}
 		else if (ball->x >= player[0].pos + 3 * (player[0].length) / 5 && ball->x <= player[0].pos + 4 * (player[0].length) / 5) {
 			if (ball->dest < 3) {
 				ball->dest = 4;
+				return 1;
 			}
 			else {
 				ball->dest = 7;
+				return 1;
 			}
 		}
 		else if (ball->x >= player[0].pos + 4 * (player[0].length) / 5 && ball->x <= player[0].pos + 5 * (player[0].length) / 5) {
 			if (ball->dest < 3) {
 				ball->dest = 3;
+				return 1;
 			}
 			else {
 				ball->dest = 8;
+				return 1;
 			}
+			
 		}
 		else {
-			exit(-1);
+			return -1;
 		}
 	}
-	else if (ball->y > CONSOLE_HEIGHT - 1) {
+	else if (ball->y >  CONSOLE_HEIGHT - 2) {
 		// Kollision mit Spieler 2
 		if (ball->x >= player[1].pos && ball->x <= player[1].pos + (player[1].length) / 5) {
 			if (ball->dest > 2 && ball->dest < 6) {
 				ball->dest = 2;
+				return 2;
 			}
 			else {
 				ball->dest = 9;
+				return 2;
 			}
 		}
 		else if (ball->x >= player[1].pos + (player[1].length) / 5 && ball->x <= player[1].pos + 2 * (player[1].length) / 5) {
 			if (ball->dest > 2 && ball->dest < 6) {
 				ball->dest = 1;
+				return 2;
 			}
 			else {
 				ball->dest = 10;
+				return 2;
 			}
 		}
 		else if (ball->x >= player[1].pos + 2 * (player[1].length) / 5 && ball->x <= player[1].pos + 3 * (player[1].length) / 5) {
 			if (ball->dest > 2 && ball->dest < 6) {
 				ball->dest = 0;
+				return 2;
 			}
 			else {
 				ball->dest = 11;
+				return 2;
 			}
 		}
 		else if (ball->x >= player[1].pos + 3 * (player[1].length) / 5 && ball->x <= player[1].pos + 1 * (player[1].length) / 5) {
 			if (ball->dest > 2 && ball->dest < 6) {
 				ball->dest = 1;
+				return 2;
 			}
 			else {
 				ball->dest = 10;
+				return 2;
 			}
 		}
 		else if (ball->x >= player[1].pos + 1 * (player[1].length) / 5 && ball->x <= player[1].pos + 5 * (player[1].length) / 5) {
 			if (ball->dest > 2 && ball->dest < 6) {
 				ball->dest = 2;
+				return 2;
 			}
 			else {
 				ball->dest = 9;
+				return 2;
 			}
+		}else{
+			return -1;
 		}
-		else {
-			exit(-1);
-		}
+	}
+	else {
+		return 0;
 	}
 }
 
-void moveBall(str_ball* ball) {
-	if (ball->prev_x > 1 && ball->prev_x < CONSOLE_WIDTH - 1) {
+void moveBall(str_ball* ball, str_player* player) {
+	if (ball->prev_x > 1 && ball->prev_x < CONSOLE_WIDTH - 1 && ball->prev_y > HEADER_HEIGHT && ball->prev_y < CONSOLE_HEIGHT) {
 		gotoxy(ball->prev_x, ball->prev_y);
 		printf("%c", BLANK);
 	}
-	//printOhneBall();
 
-	//gotoxy(0, ball->y);
-	//printBall(ball);
 	if (ball->x > 1 && ball->x < CONSOLE_WIDTH - 1) {
-		gotoxy(ball->x, ball->y);
-		printf("%c", BALL);
+		if (ball->y <= HEADER_HEIGHT) {
+			if (ball->x < player[0].pos || ball->x > player[0].pos + player[0].length) {
+				gotoxy(ball->x, ball->y);
+				printf("%c", BALL);
+			}
+		}
+		else if (ball->y >= CONSOLE_HEIGHT) {
+			if (ball->x < player[1].pos || ball->x > player[1].pos + player[1].length) {
+				gotoxy(ball->x, ball->y);
+				printf("%c", BALL);
+			}
+		}
+		else {
+			gotoxy(ball->x, ball->y);
+			printf("%c", BALL);
+		}
 	}
 }
 
@@ -648,31 +713,46 @@ void printUpdatedPlayer(str_player* player, int id) {
 	switch (id) {
 	case 0:
 		if (player[id].pos > player[id].prev_pos) {
-			gotoxy(player[id].prev_pos, 0);
-			printf("%c", BLANK);
-			gotoxy(player[id].pos + player[id].length - 1, 0);
-			printf("%c", PLAYER_TOP);
+			if (player[id].prev_pos > 0) {
+				gotoxy(player[id].prev_pos, HEADER_HEIGHT);
+				printf("%c", BLANK);
+			}
+				gotoxy(player[id].pos + player[id].length - 1, HEADER_HEIGHT);
+				printf("%c", PLAYER_TOP);
 		}
 		else if (player[id].pos < player[id].prev_pos) {
-			gotoxy(player->pos + 1, 0);
-			printf("%c", PLAYER_TOP);
-			gotoxy(player[id].prev_pos + player[id].length, 0);
-			printf("%c", BLANK);
+				gotoxy(player[id].pos + 1, HEADER_HEIGHT);
+				printf("%c", PLAYER_TOP);
+			if (player[id].prev_pos + player[id].length < CONSOLE_WIDTH) {
+				gotoxy(player[id].prev_pos + player[id].length, HEADER_HEIGHT);
+				printf("%c", BLANK);
+			}
 		}
 		break;
 	case 1:
 		if (player[id].pos > player[id].prev_pos) {
-			gotoxy(player[id].prev_pos + 1, CONSOLE_HEIGHT);
-			printf("%c", BLANK);
-			gotoxy(player[id].pos + player[id].length, CONSOLE_HEIGHT - 1);
-			printf("%c", PLAYER_BOT);
+			if (player[id].prev_pos > 0) {
+				gotoxy(player[id].prev_pos, CONSOLE_HEIGHT);
+				printf("%c", BLANK);
+			}
+				gotoxy(player[id].pos + player[id].length - 1, CONSOLE_HEIGHT);
+				printf("%c", PLAYER_BOT);
 		}
 		else if (player[id].pos < player[id].prev_pos) {
-			gotoxy(player[id].pos, CONSOLE_HEIGHT);
-			printf("%c", PLAYER_BOT);
-			gotoxy(player[id].prev_pos + player[id].length, CONSOLE_HEIGHT);
-			printf("%c", BLANK);
+				gotoxy(player[id].pos + 1, CONSOLE_HEIGHT);
+				printf("%c", PLAYER_BOT);
+			if (player[id].prev_pos + player[id].length < CONSOLE_WIDTH) {
+				gotoxy(player[id].prev_pos + player[id].length, CONSOLE_HEIGHT);
+				printf("%c", BLANK);
+			}
 		}
 		break;
 	}
+}
+
+void printScore(int score1, int score2) {
+	gotoxy(19, 0);
+	printf("%3d", score1);
+	gotoxy(CONSOLE_WIDTH - 3, 0);
+	printf("%3d", score2);
 }
