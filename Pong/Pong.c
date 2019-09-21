@@ -45,7 +45,20 @@ void setWindowSize(int width, int height) {
 	windowSize.Right = width;
 	windowSize.Bottom = height;
 
-	SetConsoleWindowInfo(GetStdHandle(STD_OUTPUT_HANDLE), TRUE, &windowSize);
+	COORD coord;
+	coord.X = width + 1;
+	coord.Y = height + 1;
+
+	HANDLE Handle = GetStdHandle(STD_OUTPUT_HANDLE);
+	SetConsoleScreenBufferSize(Handle, coord);				// Textbuffergroesse setzen (kein Scrollbalken)
+	SetConsoleWindowInfo(Handle, TRUE, &windowSize);		// Fenstergroesse setzen
+
+	// https://stackoverflow.com/a/46145911 (Entfert maximieren Button)
+	HWND hwnd = GetConsoleWindow();
+	DWORD style = GetWindowLong(hwnd, GWL_STYLE);
+	style &= ~WS_MAXIMIZEBOX;
+	SetWindowLong(hwnd, GWL_STYLE, style);
+	SetWindowPos(hwnd, NULL, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE | SWP_FRAMECHANGED | SWP_NOZORDER | SWP_SHOWWINDOW);
 }
 
 inline void setWindowTitle() {
