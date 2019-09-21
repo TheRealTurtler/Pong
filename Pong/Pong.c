@@ -756,3 +756,5 @@ void printScore(int score1, int score2) {
 	gotoxy(CONSOLE_WIDTH - 3, 0);
 	printf("%3d", score2);
 }
+
+// adsgfafsd
