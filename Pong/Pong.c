@@ -19,6 +19,9 @@
 #define LEFT_ARROW VK_LEFT
 #define RIGHT_ARROW VK_RIGHT
 
+#define UP_ARROW VK_UP
+#define DOWN_ARROW VK_DOWN
+
 #define ENTER_KEY 13
 
 const char WALL = (char)219;
@@ -93,6 +96,9 @@ void hideCursor() {
 //Originally I used constants but borland started giving me errors, so I changed to #define - I do realize that is not the best way.
 #define LEFT_ARROW (char)'D'
 #define RIGHT_ARROW (char)'C'
+
+#define UP_ARROW (char)'A'
+#define DOWN_ARROW (char)'B'
 
 #define ENTER_KEY 10
 
@@ -177,8 +183,8 @@ static inline void hideCursor() {
 #define EXIT_BUTTON 27 //ESC
 
 // Konsolengroesse (am besten ungerade, damit Ball in der Mitte starten kann)
-int CONSOLE_WIDTH = 81;
-int CONSOLE_HEIGHT = 33; // Spielfeld + Header
+int CONSOLE_WIDTH = 100;
+int CONSOLE_HEIGHT = 30; // Spielfeld + Header
 
 // Anzahl an Zeilen ueber dem Spielfeld
 int HEADER_HEIGHT = 2;
@@ -210,29 +216,69 @@ void updateBall(str_ball* ball);
 void collisionWall(str_ball* ball);
 int collisionPlayer(str_ball* ball, str_player* player);
 void moveBall(str_ball* ball, str_player* player);
-char waitForAnyKey();
+//char waitForAnyKey();
 void printUpdatedPlayer(str_player* player, int id);
 void printScore(int score1, int score2);
+void startscreen();
+void loadGame();
+void exitYN();
+int menuSelector(int x, int y, int yStart);
+int mainMenu();
+void spielende();
+int getschwierigkeitsgrad();
+int getmapgrosse();
+int setschwierigkeitsgrad(str_player* player);
+void setmapgrosse();
 void sleepProcess(int milliseconds);
 
 // ============================================= OS SPEZIFISCHE FUNKTIONEN ================================================= //
 
 #if defined (_WIN32) // Windows
 inline int* checkKeysPressed() {
-	int pressed[2];
+	int pressed[6];
 	// If a key has been pressed
 	if (kbhit()) {
+
 		if (GetKeyState(LEFT_ARROW) & 0x8000) {
 			pressed[0] = LEFT_ARROW;
 		}
 		else if (GetKeyState(RIGHT_ARROW) & 0x8000) {
 			pressed[0] = RIGHT_ARROW;
 		}
+
 		if (GetKeyState(0x41) & 0x8000) {
 			pressed[1] = 'a';
 		}
 		else if (GetKeyState(0x44) & 0x8000) {
 			pressed[1] = 'd';
+		}
+
+		if (GetKeyState(0x31) & 0x8000) {
+			pressed[2] = 1;
+		}
+		else if (GetKeyState(0x32) & 0x8000) {
+			pressed[2] = 2;
+		}
+		else if (GetKeyState(0x33) & 0x8000) {
+			pressed[2] = 3;
+		}
+
+		if (GetKeyState(UP_ARROW) & 0x8000) {
+			pressed[3] = UP_ARROW;
+		}
+		else if (GetKeyState(DOWN_ARROW) & 0x8000) {
+			pressed[3] = DOWN_ARROW;
+		}
+
+		if (GetKeyState(VK_RETURN) & 0x8000) {
+			pressed[4] = ENTER_KEY;
+		}
+
+		if (GetKeyState(0x59) & 0x8000) {
+			pressed[5] = 'y';
+		}
+		else if (GetKeyState(0x4E) & 0x8000) {
+			pressed[5] = 'n';
 		}
 	}
 
@@ -411,9 +457,9 @@ void sleepProcess(int milliseconds) {
 */
 #endif
 
-// ============================================= MAIN ====================================================================== //
+// ============================================= LoadGame ====================================================================== //
 
-int main() {
+void loadGame() {
 	srand(time(NULL));
 	str_player player[2];
 	str_ball ball;
@@ -422,8 +468,8 @@ int main() {
 	int score2 = 0;
 	int gameover = 0;
 
-	player[0].length = 10;
-	player[1].length = 10;
+	int difficulty = setschwierigkeitsgrad(player);
+	setmapgrosse();
 
 	player[0].pos = (CONSOLE_WIDTH - player[0].length) / 2;
 	player[1].pos = (CONSOLE_WIDTH - player[1].length) / 2;
@@ -441,6 +487,7 @@ int main() {
 	// ball.y = HEADER_HEIGHT + (CONSOLE_HEIGHT - HEADER_HEIGHT) / 2;
 	// ball.dest = rand() % 12;
 
+
 	printSpielfeld(player, &ball, score1, score2);
 
 	while (gameover == 0) {
@@ -448,12 +495,13 @@ int main() {
 		printUpdatedPlayer(player, 0);
 		printUpdatedPlayer(player, 1);
 
-		if (clock() - zeit - 1000 > 0) { // Geschwindigkeit Ball
+		if ((clock() - zeit - 1000) > 0) { // Geschwindigkeit Ball
 			updateBall(&ball);
 			collisionWall(&ball);
 			switch (collisionPlayer(&ball, player)) {
 			case -1:
 				// Game Over
+				spielende();
 				gameover = 1;
 				break;
 			case 0:
@@ -473,8 +521,8 @@ int main() {
 			zeit = clock();
 		}
 
-		//sleepProcess(100);
-		sleep(1);
+		sleepProcess(100);
+		//sleep(1);
 	}
 }
 
@@ -547,17 +595,9 @@ void printOhneBall() {
 }
 
 void printSpielfeld(str_player* player, str_ball* ball, int score1, int score2) {
-	// Konsolengroesse aendern
-	setWindowSize(CONSOLE_WIDTH, CONSOLE_HEIGHT);
-
-	// Fenstertitel
-	setWindowTitle();
 
 	// clear screen
 	clrscr();
-
-	// Cursor unsichtbar machen
-	hideCursor();
 
 	// Text fuer Punkte
 	printf("Punkte Spieler 1:");
@@ -830,12 +870,12 @@ void moveBall(str_ball* ball, str_player* player) {
 }
 
 // system(pause);
-char waitForAnyKey() {
+/*char getkwaitForAnyKey() {
 	while (!kbhit()) {
 		// TODO >> evtl noch interrupt einfuegen
 	}
 	return getch();
-}
+}*/
 
 void printUpdatedPlayer(str_player* player, int id) {
 	switch (id) {
@@ -883,4 +923,297 @@ void printScore(int score1, int score2) {
 	printf("%3d", score1);
 	gotoxy(CONSOLE_WIDTH - 2, 0);
 	printf("%3d", score2);
+}
+
+int main() {
+
+	// Konsolengroesse aendern
+	setWindowSize(CONSOLE_WIDTH, CONSOLE_HEIGHT);
+
+	// Fenstertitel
+	setWindowTitle();
+
+	// clear screen
+	clrscr();
+
+	// Cursor unsichtbar machen
+	hideCursor();
+
+
+	startscreen();
+
+	do {
+		switch (mainMenu()) {
+		case 0:
+			loadGame();
+			break;
+		case 1:
+			//displayHighScores();
+			break;
+		case 2:
+			exitYN();
+			break;
+		}
+	} while (1);	//
+
+	return(0);
+}
+
+int mainMenu() {
+
+	int x = 10, y = 5;
+	int yStart = y;
+
+	int selected;
+
+	clrscr(); //clear the console
+
+	gotoxy(x, y++);
+	printf("New Game\n");
+	gotoxy(x, y++);
+	printf("HighScore\n");
+	gotoxy(x, y++);
+	printf("Exit\n");
+	gotoxy(x, y++);
+
+	selected = menuSelector(x, y, yStart);
+
+	return(selected);
+}
+
+//Im Menu bewegen 
+int menuSelector(int x, int y, int yStart) {
+	int enter=0;
+	char key;
+	int i = 0;
+	x = x - 2;
+	gotoxy(x, yStart);
+
+	printf(">");
+
+	while (enter == 0) {
+		int* pressed;
+		pressed = checkKeysPressed();
+
+		if (pressed[3] == UP_ARROW) {
+			gotoxy(x, yStart + i);
+			printf(" ");
+
+			if (yStart >= yStart + i) {
+				i = y - yStart - 2;
+			}
+			else {
+				i--;
+			}
+			gotoxy(x, yStart + i);
+			printf(">");
+		}
+		else
+			if (pressed[3] == DOWN_ARROW)
+			{
+				gotoxy(x, yStart + i);
+				printf(" ");
+
+				if (i + 2 >= y - yStart) {
+					i = 0;
+				}
+				else {
+					i++;
+				}
+				gotoxy(x, yStart + i);
+				printf(">");
+			}
+		if (pressed[4] == ENTER_KEY) { 
+				enter=1; 
+			}
+		Sleep(100);
+	} 
+	return(i);
+}
+
+//	Alternatives ASCII Art
+/*void startscreen(){
+	//	ASCII Art Quelle: http://pong.ascii.uk/
+	clrscr();
+
+	for(int i=0; i<((CONSOLE_HEIGHT/2)-6); i++){
+	printf("\n");
+	}
+
+	printf("\t\t\t88888b.  .d88b. 88888b.  .d88b.  \n");
+	printf("\t\t\t888 \"88bd88\"\"88b888 \"88bd88P\"88b\n");
+	printf("\t\t\t888  888888  888888  888888  888 \n");
+	printf("\t\t\t888 d88PY88..88P888  888Y88b 888 \n");
+	printf("\t\t\t88888P\"  \"Y88P\" 888  888 \"Y88888 \n");
+	printf("\t\t\t888                          888 \n");
+	printf("\t\t\t888                     Y8b d88P \n");
+	printf("\t\t\t888                      \"Y88P\"  \n");
+	printf("\t\t\tDruecke irgendeinen Key...... ");
+
+	sytem("pause");
+	return;
+}*/
+
+// Note: "\\" schreibt nur einmal "\"
+void startscreen() {
+	//	ASCII Art Quelle: http://pong.ascii.uk/
+
+	clrscr();
+
+	gotoxy((CONSOLE_WIDTH / 2) - 13, (CONSOLE_HEIGHT / 2) - 4); //	Mein Versuch das ganze irgendwie mittig zu machen...
+															//	Alternative: vgl. oben
+	printf(" _ __   ___  _ __   __ _ ");
+
+	gotoxy((CONSOLE_WIDTH / 2) - 13, (CONSOLE_HEIGHT / 2) - 3);
+	printf("| '_ \\ / _ \\| '_ \\ / _` |");
+
+	gotoxy((CONSOLE_WIDTH / 2) - 13, (CONSOLE_HEIGHT / 2) - 2);
+	printf("| |_) | (_) | | | | (_| |");
+
+	gotoxy((CONSOLE_WIDTH / 2) - 13, (CONSOLE_HEIGHT / 2) - 1);
+	printf("| .__/ \\___/|_| |_|\\__, |");
+
+	gotoxy((CONSOLE_WIDTH / 2) - 13, (CONSOLE_HEIGHT / 2));
+	printf("| |                 __/ |");
+
+	gotoxy((CONSOLE_WIDTH / 2) - 13, (CONSOLE_HEIGHT / 2) + 1);
+	printf("|_|                |___/ ");
+
+	gotoxy((CONSOLE_WIDTH / 2) - 13, (CONSOLE_HEIGHT / 2) + 2);
+	printf("Druecke irgendeinen Key...... ");
+
+	gotoxy(0, 0);
+
+	system("pause");
+	return;
+}
+
+void exitYN(void) {
+	clrscr();
+	int* pressed;
+	gotoxy(10, CONSOLE_HEIGHT / 2);
+	printf("Bist du sicher, dass du das Spiel beenden willst??(Y/N)\n");
+
+	do
+	{
+		pressed = checkKeysPressed();
+		Sleep(100);
+	} while (!(pressed[5] == 'y' || pressed[5] == 'n'));
+
+	if (pressed[5] == 'y')
+	{
+		clrscr(); //clear the console
+		exit(1);
+	}
+	return;
+}
+
+int getschwierigkeitsgrad() {
+	//int speed;
+	clrscr();
+	int selected = 0;
+
+	gotoxy(10, 5);
+	printf("Waehle die Nummer des gewuenschten Schwierigkeitsgrades aus:\n");
+	printf("\t 1. leicht");
+	printf("\t 2. mittel");
+	printf("\t 3. schwer");
+
+	while (selected == 0) {
+		int* pressed;
+		pressed = checkKeysPressed();
+
+		switch (pressed[2]) {
+		case 1:
+			return 1;
+			break;
+		case 2:
+			return 2;
+			break;
+		case 3:
+			return 3;
+			break;
+		}
+		
+		Sleep(100);
+	}
+}
+
+int getmapgrosse() {
+	int selected = 0;
+
+	clrscr();
+
+	gotoxy(10, 5);
+	printf("Waehle die Nummer der gewuenschten Map groesse:\n");
+	printf("\t 1. klein");
+	printf("\t 2. mittel");
+	printf("\t 3. gross");
+
+	Sleep(100);
+
+	while (selected == 0) {
+		int* pressed;
+		pressed = checkKeysPressed();
+
+		switch (pressed[2]) {
+		case 1:
+			return 1;
+			break;
+		case 2:
+			return 2;
+			break;
+		case 3:
+			return 3;
+			break;
+		}
+
+		Sleep(100);
+	}
+}
+
+int setschwierigkeitsgrad(str_player* player) {
+
+	int difficulty = getschwierigkeitsgrad();
+
+	switch (difficulty) {
+	case 1:
+		player[0].length = (CONSOLE_WIDTH / 5);
+		player[1].length = (CONSOLE_WIDTH / 5);
+		break;
+	case 2:
+		player[0].length = (CONSOLE_WIDTH / 10);
+		player[1].length = (CONSOLE_WIDTH / 10);
+		break;
+	case 3:
+		player[0].length = (CONSOLE_WIDTH / 20);
+		player[1].length = (CONSOLE_WIDTH / 20);
+		break;
+	}
+
+	return difficulty;
+}
+
+void setmapgrosse() {
+	int grosse = getmapgrosse();
+
+	CONSOLE_HEIGHT = grosse * CONSOLE_HEIGHT;
+	CONSOLE_WIDTH = grosse * CONSOLE_WIDTH;
+
+	setWindowSize(CONSOLE_WIDTH, CONSOLE_HEIGHT);
+}
+
+void spielende() {
+	clrscr();
+
+	gotoxy(CONSOLE_WIDTH / 2, CONSOLE_HEIGHT / 2);
+	printf("Gameover\n");
+	printf("any Key");
+
+	CONSOLE_HEIGHT = 30;
+	CONSOLE_WIDTH = 100;
+
+	setWindowSize(CONSOLE_WIDTH, CONSOLE_HEIGHT);
+
+	system("pause");
 }
