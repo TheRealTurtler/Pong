@@ -867,27 +867,20 @@ int menuSelector(int x, int y, int yStart) {
 
 	printf(">");
 
-	gotoxy(0, 0);
-
-	int a = 0;
-
-
-	while (enter == 0)
-	{
+	while (enter == 0) {
 		int* pressed;
 		pressed = checkKeysPressed();
-		gotoxy(0, 0);
-		printf("%d", pressed[3]);
 
-		if (pressed[3] == UP_ARROW)
-		{
+		if (pressed[3] == UP_ARROW) {
 			gotoxy(x, yStart + i);
 			printf(" ");
 
-			if (yStart >= yStart + i)
+			if (yStart >= yStart + i) {
 				i = y - yStart - 2;
-			else
+			}
+			else {
 				i--;
+			}
 			gotoxy(x, yStart + i);
 			printf(">");
 		}
@@ -897,16 +890,19 @@ int menuSelector(int x, int y, int yStart) {
 				gotoxy(x, yStart + i);
 				printf(" ");
 
-				if (i + 2 >= y - yStart)
+				if (i + 2 >= y - yStart) {
 					i = 0;
-				else
+				}
+				else {
 					i++;
+				}
 				gotoxy(x, yStart + i);
 				printf(">");
 			}
 		if (pressed[4] == ENTER_KEY) { 
 				enter=1; 
 			}
+		Sleep(100);
 	} 
 	return(i);
 }
