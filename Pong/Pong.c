@@ -79,57 +79,6 @@ void hideCursor() {
 	SetConsoleCursorInfo(GetStdHandle(STD_OUTPUT_HANDLE), &info);
 }
 
-inline int* checkKeysPressed() {
-	int pressed[6];
-	// If a key has been pressed
-	if (kbhit()) {
-
-		if (GetKeyState(LEFT_ARROW) & 0x8000) {
-			pressed[0] = LEFT_ARROW;
-		}
-		else if (GetKeyState(RIGHT_ARROW) & 0x8000) {
-			pressed[0] = RIGHT_ARROW;
-		}
-
-		if (GetKeyState(0x41) & 0x8000) {
-			pressed[1] = 'a';
-		}
-		else if (GetKeyState(0x44) & 0x8000) {
-			pressed[1] = 'd';
-		}
-
-		if (GetKeyState(0x31) & 0x8000) {
-			pressed[2] = 1;
-		}
-		else if (GetKeyState(0x32) & 0x8000) {
-			pressed[2] = 2;
-		}
-		else if (GetKeyState(0x33) & 0x8000) {
-			pressed[2] = 3;
-		}
-
-		if (GetKeyState(UP_ARROW) & 0x8000) {
-			pressed[3] = UP_ARROW;
-		}
-		else if (GetKeyState(DOWN_ARROW) & 0x8000) {
-			pressed[3] = DOWN_ARROW;
-		}
-
-		if (GetKeyState(VK_RETURN) & 0x8000) {
-			pressed[4] = ENTER_KEY;
-		}
-
-		if (GetKeyState(0x59) & 0x8000) {
-			pressed[5] = 'y';
-		}
-		else if (GetKeyState(0x4E) & 0x8000) {
-			pressed[5] = 'n';
-		}
-	}
-
-	return pressed;
-}
-
 #else
 //Linux Libraries
 #include <stdlib.h>
@@ -286,20 +235,50 @@ void sleepProcess(int milliseconds);
 
 #if defined (_WIN32) // Windows
 inline int* checkKeysPressed() {
-	int pressed[2];
+	int pressed[6];
 	// If a key has been pressed
 	if (kbhit()) {
+
 		if (GetKeyState(LEFT_ARROW) & 0x8000) {
 			pressed[0] = LEFT_ARROW;
 		}
 		else if (GetKeyState(RIGHT_ARROW) & 0x8000) {
 			pressed[0] = RIGHT_ARROW;
 		}
+
 		if (GetKeyState(0x41) & 0x8000) {
 			pressed[1] = 'a';
 		}
 		else if (GetKeyState(0x44) & 0x8000) {
 			pressed[1] = 'd';
+		}
+
+		if (GetKeyState(0x31) & 0x8000) {
+			pressed[2] = 1;
+		}
+		else if (GetKeyState(0x32) & 0x8000) {
+			pressed[2] = 2;
+		}
+		else if (GetKeyState(0x33) & 0x8000) {
+			pressed[2] = 3;
+		}
+
+		if (GetKeyState(UP_ARROW) & 0x8000) {
+			pressed[3] = UP_ARROW;
+		}
+		else if (GetKeyState(DOWN_ARROW) & 0x8000) {
+			pressed[3] = DOWN_ARROW;
+		}
+
+		if (GetKeyState(VK_RETURN) & 0x8000) {
+			pressed[4] = ENTER_KEY;
+		}
+
+		if (GetKeyState(0x59) & 0x8000) {
+			pressed[5] = 'y';
+		}
+		else if (GetKeyState(0x4E) & 0x8000) {
+			pressed[5] = 'n';
 		}
 	}
 
@@ -542,8 +521,8 @@ void loadGame() {
 			zeit = clock();
 		}
 
-		//sleepProcess(100);
-		sleep(1);
+		sleepProcess(100);
+		//sleep(1);
 	}
 }
 
