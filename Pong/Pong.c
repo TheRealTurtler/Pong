@@ -986,41 +986,66 @@ void exitYN(void) {
 
 int getschwierigkeitsgrad() {
 	//int speed;
-	int* pressed;
 	clrscr();
+	int selected = 0;
 
-	do
-	{
-		gotoxy(10, 5);
-		printf("Waehle die Nummer des gewuenschten Schwierigkeitsgrades aus:\n");
-		printf("\t 1. leicht");
-		printf("\t 2. mittel");
-		printf("\t 3. schwer");
+	gotoxy(10, 5);
+	printf("Waehle die Nummer des gewuenschten Schwierigkeitsgrades aus:\n");
+	printf("\t 1. leicht");
+	printf("\t 2. mittel");
+	printf("\t 3. schwer");
+
+	while (selected == 0) {
+		int* pressed;
 		pressed = checkKeysPressed();
-		Sleep(100);
-	} while (pressed[2] < 1 || pressed[2] > 3);
 
-	return(pressed[2]);
+		switch (pressed[2]) {
+		case 1:
+			return 1;
+			break;
+		case 2:
+			return 2;
+			break;
+		case 3:
+			return 3;
+			break;
+		}
+		
+		Sleep(100);
+	}
 }
 
 int getmapgrosse() {
-	int* pressed;
+	int selected = 0;
 
 	clrscr();
 
-	do
-	{
-		gotoxy(10, 5);
-		printf("Waehle die Nummer der gewuenschten Map groesse:\n");
-		printf("\t 1. klein");
-		printf("\t 2. mittel");
-		printf("\t 3. gross");
+	gotoxy(10, 5);
+	printf("Waehle die Nummer der gewuenschten Map groesse:\n");
+	printf("\t 1. klein");
+	printf("\t 2. mittel");
+	printf("\t 3. gross");
 
+	Sleep(100);
+
+	while (selected == 0) {
+		int* pressed;
 		pressed = checkKeysPressed();
-		Sleep(100);
-	} while (pressed[2] < 1 || pressed[2] > 3);
 
-	return(pressed[2]);
+		switch (pressed[2]) {
+		case 1:
+			return 1;
+			break;
+		case 2:
+			return 2;
+			break;
+		case 3:
+			return 3;
+			break;
+		}
+
+		Sleep(100);
+	}
 }
 
 int setschwierigkeitsgrad(str_player* player) {
