@@ -76,33 +76,16 @@ void hideCursor() {
 	SetConsoleCursorInfo(GetStdHandle(STD_OUTPUT_HANDLE), &info);
 }
 
-inline int* checkKeysPressed() {
-	int pressed[2];
-	// If a key has been pressed
-	if (kbhit()) {
-		if (GetKeyState(LEFT_ARROW) & 0x8000) {
-			pressed[0] = LEFT_ARROW;
-		}
-		else if (GetKeyState(RIGHT_ARROW) & 0x8000) {
-			pressed[0] = RIGHT_ARROW;
-		}
-		if (GetKeyState(0x41) & 0x8000) {
-			pressed[1] = 'a';
-		}
-		else if (GetKeyState(0x44) & 0x8000) {
-			pressed[1] = 'd';
-		}
-	}
-
-	return pressed;
-}
-
 #else
 //Linux Libraries
 #include <stdlib.h>
 #include <termios.h>
 #include <unistd.h>
 #include <fcntl.h>
+
+#include <sys/select.h>
+#include <stropts.h>
+#include <sys/ioctl.h>
 
 //Linux Constants
 
@@ -125,6 +108,7 @@ void gotoxy(int x, int y)
 {
 	printf("%c[%d;%df", 0x1B, y, x);
 }
+
 
 //http://cboard.cprogramming.com/c-programming/63166-kbhit-linux.html
 int kbhit(void)
@@ -154,6 +138,8 @@ int kbhit(void)
 	return 0;
 }
 
+
+
 //http://www.experts-exchange.com/Programming/Languages/C/Q_10119844.html - posted by jos
 char getch()
 {
@@ -165,37 +151,24 @@ char getch()
 	return(c);
 }
 
-inline void clrscr()
+
+static inline void clrscr()
 {
 	system("clear");
 	return;
 }
 
-inline void setWindowSize(int width, int height) {
+static inline void setWindowSize(int width, int height) {
 	// TODO >> Fenstergroesse in Linux
+	printf("%d %d", width, height);
 }
 
-inline void setWindowTitle() {
+static inline void setWindowTitle() {
 	// TODO >> Fensertitel in Linux
 }
 
-inline void hideCursor() {
+static inline void hideCursor() {
 	// TODO >> Cursor unsichtbar machen
-}
-
-int checkKeysPressed() {
-	int pressed;
-
-	// If a key has been pressed
-	if (kbhit()) {
-		pressed = getch();
-		if (pressed == LEFT_ARROW || pressed == RIGHT_ARROW || pressed == 'a' || pressed == 'd') {
-			return pressed;
-		}
-		else if (pressed == EXIT_BUTTON) {
-			// pauseMenu();
-		}
-	}
 }
 //End linux Functions
 #endif
@@ -228,6 +201,7 @@ typedef struct {
 
 // ============================================= FUNKTIONEN DEKLARATIONEN ================================================== //
 
+void updatePlayer(str_player* player);
 void printPlayer(str_player* player, int id);
 void printOhneBall();
 void printSpielfeld(str_player* player, str_ball* ball, int score1, int score2);
@@ -239,10 +213,32 @@ void moveBall(str_ball* ball, str_player* player);
 char waitForAnyKey();
 void printUpdatedPlayer(str_player* player, int id);
 void printScore(int score1, int score2);
+void sleepProcess(int milliseconds);
 
 // ============================================= OS SPEZIFISCHE FUNKTIONEN ================================================= //
 
 #if defined (_WIN32) // Windows
+inline int* checkKeysPressed() {
+	int pressed[2];
+	// If a key has been pressed
+	if (kbhit()) {
+		if (GetKeyState(LEFT_ARROW) & 0x8000) {
+			pressed[0] = LEFT_ARROW;
+		}
+		else if (GetKeyState(RIGHT_ARROW) & 0x8000) {
+			pressed[0] = RIGHT_ARROW;
+		}
+		if (GetKeyState(0x41) & 0x8000) {
+			pressed[1] = 'a';
+		}
+		else if (GetKeyState(0x44) & 0x8000) {
+			pressed[1] = 'd';
+		}
+	}
+
+	return pressed;
+}
+
 void updatePlayer(str_player* player) {
 	// alte Position speichern
 	player[0].prev_pos = player[0].pos;
@@ -279,8 +275,104 @@ void updatePlayer(str_player* player) {
 		break;
 	}
 }
+
+inline void sleepProcess(int milliseconds) {
+	Sleep(milliseconds);
+}
 #else // Linux
+/*
+int getch() {
+	int ch;
+	struct termios tc_attrib;
+	if (tcgetattr(STDIN_FILENO, &tc_attrib))
+		return -1;
+
+	tcflag_t lflag = tc_attrib.c_lflag;
+	tc_attrib.c_lflag &= ~ICANON & ~ECHO;
+
+	if (tcsetattr(STDIN_FILENO, TCSANOW, &tc_attrib))
+		return -1;
+
+	ch = getchar();
+
+	tc_attrib.c_lflag = lflag;
+	tcsetattr(STDIN_FILENO, TCSANOW, &tc_attrib);
+	return ch;
+}
+*/
+
+/*
+int kbhit() {
+	static const int STDIN = 0;
+	static int initialized = 0;
+
+	if (!initialized) {
+		// Use termios to turn off line buffering
+		struct termios term;
+		tcgetattr(STDIN, &term);
+		term.c_lflag &= ~ICANON;
+		tcsetattr(STDIN, TCSANOW, &term);
+		setbuf(stdin, NULL);
+		initialized = 1;
+	}
+
+	int bytesWaiting;
+	ioctl(STDIN, FIONREAD, &bytesWaiting);
+	return bytesWaiting;
+}
+*/
+
+/*
+char getch()
+{
+	char pressed;
+	system("stty raw");
+	pressed = getch();
+		// https://stackoverflow.com/a/11432632 Pfeiltasten mit getch()
+		if (pressed == '\033') {	// if the first value is esc
+			getch();				// skip the [
+			pressed = getch();		// the real value
+
+			return pressed;
+		}
+		else {
+			return pressed;
+		}
+	system("stty sane");
+	//printf("%c",c);
+	return pressed;
+}
+*/
+
+int checkKeysPressed() {
+	int pressed;
+
+	// If a key has been pressed
+	if (kbhit()) {
+		pressed = getch();
+		if (pressed == '\033') {	// if the first value is esc
+			getch();				// skip the [
+			pressed = getch();			// the real value
+
+			if (pressed == LEFT_ARROW || pressed == RIGHT_ARROW) {
+				return pressed;
+			}
+			else if (pressed == EXIT_BUTTON) {
+				// pauseMenu();
+			}
+		}
+		else if (pressed == 'a' || pressed == 'd') {
+			return pressed;
+		}
+	}
+	return 0;
+}
+
 void updatePlayer(str_player* player) {
+	// alte Position speichern
+	player[0].prev_pos = player[0].pos;
+	player[1].prev_pos = player[1].pos;
+
 	// Tastendruck
 	int pressed = checkKeysPressed();
 
@@ -292,7 +384,7 @@ void updatePlayer(str_player* player) {
 		}
 		break;
 	case RIGHT_ARROW:
-		if (player[0].pos + player[0].length < CONSOLE_WIDTH - 1) {
+		if (player[0].pos + player[0].length < CONSOLE_WIDTH) {
 			player[0].pos++;
 		}
 		break;
@@ -302,12 +394,21 @@ void updatePlayer(str_player* player) {
 		}
 		break;
 	case 'd':
-		if (player[1].pos + player[1].length < CONSOLE_WIDTH - 1) {
+		if (player[1].pos + player[1].length < CONSOLE_WIDTH) {
 			player[1].pos++;
 		}
 		break;
 	}
 }
+
+/*
+void sleepProcess(int milliseconds) {
+	struct timespec ts;
+	ts.tv_sec = milliseconds / 1000;
+	ts.tv_nsec = (milliseconds % 1000) * 1000000;
+	nanosleep(&ts, NULL);
+}
+*/
 #endif
 
 // ============================================= MAIN ====================================================================== //
@@ -372,7 +473,8 @@ int main() {
 			zeit = clock();
 		}
 
-		Sleep(100);
+		//sleepProcess(100);
+		sleep(1);
 	}
 }
 
