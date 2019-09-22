@@ -48,7 +48,20 @@ void setWindowSize(int width, int height) {
 	windowSize.Right = width;
 	windowSize.Bottom = height;
 
-	SetConsoleWindowInfo(GetStdHandle(STD_OUTPUT_HANDLE), TRUE, &windowSize);
+	COORD coord;
+	coord.X = width + 1;
+	coord.Y = height + 1;
+
+	HANDLE Handle = GetStdHandle(STD_OUTPUT_HANDLE);
+	SetConsoleScreenBufferSize(Handle, coord);				// Textbuffergroesse setzen (kein Scrollbalken)
+	SetConsoleWindowInfo(Handle, TRUE, &windowSize);		// Fenstergroesse setzen
+
+	// https://stackoverflow.com/a/46145911 (Entfert maximieren Button)
+	HWND hwnd = GetConsoleWindow();
+	DWORD style = GetWindowLong(hwnd, GWL_STYLE);
+	style &= ~WS_MAXIMIZEBOX;
+	SetWindowLong(hwnd, GWL_STYLE, style);
+	SetWindowPos(hwnd, NULL, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE | SWP_FRAMECHANGED | SWP_NOZORDER | SWP_SHOWWINDOW);
 }
 
 inline void setWindowTitle() {
@@ -66,6 +79,161 @@ void hideCursor() {
 	SetConsoleCursorInfo(GetStdHandle(STD_OUTPUT_HANDLE), &info);
 }
 
+#else
+//Linux Libraries
+#include <stdlib.h>
+#include <termios.h>
+#include <unistd.h>
+#include <fcntl.h>
+
+#include <sys/select.h>
+#include <stropts.h>
+#include <sys/ioctl.h>
+
+//Linux Constants
+
+//Controls (arrow keys for Ubuntu) 
+//Originally I used constants but borland started giving me errors, so I changed to #define - I do realize that is not the best way.
+#define LEFT_ARROW (char)'D'
+#define RIGHT_ARROW (char)'C'
+
+#define UP_ARROW (char)'A'
+#define DOWN_ARROW (char)'B'
+
+#define ENTER_KEY 10
+
+const char WALL = '#';
+const char BLANK = ' ';
+const char BALL = 'O';
+const char PLAYER_TOP = '=';
+const char PLAYER_BOT = '=';
+
+//Linux Functions - These functions emulate some functions from the windows only conio header file
+//Code: http://ubuntuforums.org/showthread.php?t=549023
+void gotoxy(int x, int y)
+{
+	printf("%c[%d;%df", 0x1B, y, x);
+}
+
+
+//http://cboard.cprogramming.com/c-programming/63166-kbhit-linux.html
+int kbhit(void)
+{
+	struct termios oldt, newt;
+	int ch;
+	int oldf;
+
+	tcgetattr(STDIN_FILENO, &oldt);
+	newt = oldt;
+	newt.c_lflag &= ~(ICANON | ECHO);
+	tcsetattr(STDIN_FILENO, TCSANOW, &newt);
+	oldf = fcntl(STDIN_FILENO, F_GETFL, 0);
+	fcntl(STDIN_FILENO, F_SETFL, oldf | O_NONBLOCK);
+
+	ch = getchar();
+
+	tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
+	fcntl(STDIN_FILENO, F_SETFL, oldf);
+
+	if (ch != EOF)
+	{
+		ungetc(ch, stdin);
+		return 1;
+	}
+
+	return 0;
+}
+
+
+
+//http://www.experts-exchange.com/Programming/Languages/C/Q_10119844.html - posted by jos
+char getch()
+{
+	char c;
+	system("stty raw");
+	c = getchar();
+	system("stty sane");
+	//printf("%c",c);
+	return(c);
+}
+
+
+static inline void clrscr()
+{
+	system("clear");
+	return;
+}
+
+static inline void setWindowSize(int width, int height) {
+	// TODO >> Fenstergroesse in Linux
+	printf("%d %d", width, height);
+}
+
+static inline void setWindowTitle() {
+	// TODO >> Fensertitel in Linux
+}
+
+static inline void hideCursor() {
+	// TODO >> Cursor unsichtbar machen
+}
+//End linux Functions
+#endif
+
+//This should be the same on both operating systems
+#define EXIT_BUTTON 27 //ESC
+
+// Konsolengroesse (am besten ungerade, damit Ball in der Mitte starten kann)
+int CONSOLE_WIDTH = 100;
+int CONSOLE_HEIGHT = 30; // Spielfeld + Header
+
+// Anzahl an Zeilen ueber dem Spielfeld
+int HEADER_HEIGHT = 2;
+
+// ============================================= STRUCTS =================================================================== //
+
+typedef struct {
+	int x;
+	int prev_x;
+	int y;
+	int prev_y;
+	int dest;
+}str_ball;
+
+typedef struct {
+	int length;
+	int pos;
+	int prev_pos;
+}str_player;
+
+// ============================================= FUNKTIONEN DEKLARATIONEN ================================================== //
+
+void updatePlayer(str_player* player);
+void printPlayer(str_player* player, int id);
+void printOhneBall();
+void printSpielfeld(str_player* player, str_ball* ball, int score1, int score2);
+// void movePlayer(str_player* player, int id);
+void updateBall(str_ball* ball);
+void collisionWall(str_ball* ball);
+int collisionPlayer(str_ball* ball, str_player* player);
+void moveBall(str_ball* ball, str_player* player);
+//char waitForAnyKey();
+void printUpdatedPlayer(str_player* player, int id);
+void printScore(int score1, int score2);
+void startscreen();
+void loadGame();
+void exitYN();
+int menuSelector(int x, int y, int yStart);
+int mainMenu();
+void spielende();
+int getschwierigkeitsgrad();
+int getmapgrosse();
+int setschwierigkeitsgrad(str_player* player);
+void setmapgrosse();
+void sleepProcess(int milliseconds);
+
+// ============================================= OS SPEZIFISCHE FUNKTIONEN ================================================= //
+
+#if defined (_WIN32) // Windows
 inline int* checkKeysPressed() {
 	int pressed[6];
 	// If a key has been pressed
@@ -117,163 +285,6 @@ inline int* checkKeysPressed() {
 	return pressed;
 }
 
-#else
-//Linux Libraries
-#include <stdlib.h>
-#include <termios.h>
-#include <unistd.h>
-#include <fcntl.h>
-
-//Linux Constants
-
-//Controls (arrow keys for Ubuntu) 
-//Originally I used constants but borland started giving me errors, so I changed to #define - I do realize that is not the best way.
-#define LEFT_ARROW (char)'D'
-#define RIGHT_ARROW (char)'C'
-
-#define UP_ARROW (char)'A'
-#define DOWN_ARROW (char)'B'
-
-#define ENTER_KEY 10
-
-const char WALL = '#';
-const char BLANK = ' ';
-const char BALL = 'O';
-const char PLAYER_TOP = '=';
-const char PLAYER_BOT = '=';
-
-//Linux Functions - These functions emulate some functions from the windows only conio header file
-//Code: http://ubuntuforums.org/showthread.php?t=549023
-void gotoxy(int x, int y)
-{
-	printf("%c[%d;%df", 0x1B, y, x);
-}
-
-//http://cboard.cprogramming.com/c-programming/63166-kbhit-linux.html
-int kbhit(void)
-{
-	struct termios oldt, newt;
-	int ch;
-	int oldf;
-
-	tcgetattr(STDIN_FILENO, &oldt);
-	newt = oldt;
-	newt.c_lflag &= ~(ICANON | ECHO);
-	tcsetattr(STDIN_FILENO, TCSANOW, &newt);
-	oldf = fcntl(STDIN_FILENO, F_GETFL, 0);
-	fcntl(STDIN_FILENO, F_SETFL, oldf | O_NONBLOCK);
-
-	ch = getchar();
-
-	tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
-	fcntl(STDIN_FILENO, F_SETFL, oldf);
-
-	if (ch != EOF)
-	{
-		ungetc(ch, stdin);
-		return 1;
-	}
-
-	return 0;
-}
-
-//http://www.experts-exchange.com/Programming/Languages/C/Q_10119844.html - posted by jos
-char getch()
-{
-	char c;
-	system("stty raw");
-	c = getchar();
-	system("stty sane");
-	//printf("%c",c);
-	return(c);
-}
-
-inline void clrscr()
-{
-	system("clear");
-	return;
-}
-
-inline void setWindowSize(int width, int height) {
-	// TODO >> Fenstergroesse in Linux
-}
-
-inline void setWindowTitle() {
-	// TODO >> Fensertitel in Linux
-}
-
-inline void hideCursor() {
-	// TODO >> Cursor unsichtbar machen
-}
-
-int checkKeysPressed() {
-	int pressed;
-
-	// If a key has been pressed
-	if (kbhit()) {
-		pressed = getch();
-		if (pressed == LEFT_ARROW || pressed == RIGHT_ARROW || pressed == 'a' || pressed == 'd') {
-			return pressed;
-		}
-		else if (pressed == EXIT_BUTTON) {
-			// pauseMenu();
-		}
-	}
-}
-//End linux Functions
-#endif
-
-//This should be the same on both operating systems
-#define EXIT_BUTTON 27 //ESC
-
-// Spielfeldgroesse
-int CONSOLE_WIDTH = 100;
-int CONSOLE_HEIGHT = 30;
-int HEADER_HEIGHT = 2;
-
-// ============================================= STRUCTS =================================================================== //
-
-typedef struct {
-	int x;
-	int prev_x;
-	int y;
-	int prev_y;
-	int dest;
-}str_ball;
-
-typedef struct {
-	int length;
-	int pos;
-	int prev_pos;
-}str_player;
-
-// ============================================= FUNKTIONEN DEKLARATIONEN ================================================== //
-
-void printPlayer(str_player* player, int id);
-void printOhneBall();
-void printSpielfeld(str_player* player, str_ball* ball, int score1, int score2);
-// void movePlayer(str_player* player, int id);
-void updateBall(str_ball* ball);
-void collisionWall(str_ball* ball);
-int collisionPlayer(str_ball* ball, str_player* player);
-void moveBall(str_ball* ball, str_player* player);
-//char waitForAnyKey();
-void printUpdatedPlayer(str_player* player, int id);
-void printScore(int score1, int score2);
-void startscreen();
-void loadGame();
-void exitYN();
-int menuSelector(int x, int y, int yStart);
-int mainMenu();
-void spielende();
-int getschwierigkeitsgrad();
-int getmapgrosse();
-int setschwierigkeitsgrad(str_player* player);
-void setmapgrosse();
-
-// ============================================= OS SPEZIFISCHE FUNKTIONEN ================================================= //
-
-#if defined (_WIN32) // Windows
 void updatePlayer(str_player* player) {
 	// alte Position speichern
 	player[0].prev_pos = player[0].pos;
@@ -310,8 +321,104 @@ void updatePlayer(str_player* player) {
 		break;
 	}
 }
+
+inline void sleepProcess(int milliseconds) {
+	Sleep(milliseconds);
+}
 #else // Linux
+/*
+int getch() {
+	int ch;
+	struct termios tc_attrib;
+	if (tcgetattr(STDIN_FILENO, &tc_attrib))
+		return -1;
+
+	tcflag_t lflag = tc_attrib.c_lflag;
+	tc_attrib.c_lflag &= ~ICANON & ~ECHO;
+
+	if (tcsetattr(STDIN_FILENO, TCSANOW, &tc_attrib))
+		return -1;
+
+	ch = getchar();
+
+	tc_attrib.c_lflag = lflag;
+	tcsetattr(STDIN_FILENO, TCSANOW, &tc_attrib);
+	return ch;
+}
+*/
+
+/*
+int kbhit() {
+	static const int STDIN = 0;
+	static int initialized = 0;
+
+	if (!initialized) {
+		// Use termios to turn off line buffering
+		struct termios term;
+		tcgetattr(STDIN, &term);
+		term.c_lflag &= ~ICANON;
+		tcsetattr(STDIN, TCSANOW, &term);
+		setbuf(stdin, NULL);
+		initialized = 1;
+	}
+
+	int bytesWaiting;
+	ioctl(STDIN, FIONREAD, &bytesWaiting);
+	return bytesWaiting;
+}
+*/
+
+/*
+char getch()
+{
+	char pressed;
+	system("stty raw");
+	pressed = getch();
+		// https://stackoverflow.com/a/11432632 Pfeiltasten mit getch()
+		if (pressed == '\033') {	// if the first value is esc
+			getch();				// skip the [
+			pressed = getch();		// the real value
+
+			return pressed;
+		}
+		else {
+			return pressed;
+		}
+	system("stty sane");
+	//printf("%c",c);
+	return pressed;
+}
+*/
+
+int checkKeysPressed() {
+	int pressed;
+
+	// If a key has been pressed
+	if (kbhit()) {
+		pressed = getch();
+		if (pressed == '\033') {	// if the first value is esc
+			getch();				// skip the [
+			pressed = getch();			// the real value
+
+			if (pressed == LEFT_ARROW || pressed == RIGHT_ARROW) {
+				return pressed;
+			}
+			else if (pressed == EXIT_BUTTON) {
+				// pauseMenu();
+			}
+		}
+		else if (pressed == 'a' || pressed == 'd') {
+			return pressed;
+		}
+	}
+	return 0;
+}
+
 void updatePlayer(str_player* player) {
+	// alte Position speichern
+	player[0].prev_pos = player[0].pos;
+	player[1].prev_pos = player[1].pos;
+
 	// Tastendruck
 	int pressed = checkKeysPressed();
 
@@ -323,7 +430,7 @@ void updatePlayer(str_player* player) {
 		}
 		break;
 	case RIGHT_ARROW:
-		if (player[0].pos + player[0].length < CONSOLE_WIDTH - 1) {
+		if (player[0].pos + player[0].length < CONSOLE_WIDTH) {
 			player[0].pos++;
 		}
 		break;
@@ -333,12 +440,21 @@ void updatePlayer(str_player* player) {
 		}
 		break;
 	case 'd':
-		if (player[1].pos + player[1].length < CONSOLE_WIDTH - 1) {
+		if (player[1].pos + player[1].length < CONSOLE_WIDTH) {
 			player[1].pos++;
 		}
 		break;
 	}
 }
+
+/*
+void sleepProcess(int milliseconds) {
+	struct timespec ts;
+	ts.tv_sec = milliseconds / 1000;
+	ts.tv_nsec = (milliseconds % 1000) * 1000000;
+	nanosleep(&ts, NULL);
+}
+*/
 #endif
 
 // ============================================= LoadGame ====================================================================== //
@@ -357,12 +473,19 @@ void loadGame() {
 
 	player[0].pos = (CONSOLE_WIDTH - player[0].length) / 2;
 	player[1].pos = (CONSOLE_WIDTH - player[1].length) / 2;
+	// TODO >> player.length gerade/ ungerade (Spielfeldbreite ungerade -> Ball in der Mitte, aber Spieler nicht)
+	
+	// Debug
 	ball.x = 50;
 	ball.y = 10;
+	ball.dest = 0;
 	// ball.prev_x = ball.x;
 	// ball.prev_y = ball.y;
+
+	// Release
+	// ball.x = 1 + (CONSOLE_WIDTH - 2) / 2;
+	// ball.y = HEADER_HEIGHT + (CONSOLE_HEIGHT - HEADER_HEIGHT) / 2;
 	// ball.dest = rand() % 12;
-	ball.dest = 0;
 
 
 	printSpielfeld(player, &ball, score1, score2);
@@ -398,7 +521,8 @@ void loadGame() {
 			zeit = clock();
 		}
 
-		Sleep(100);
+		sleepProcess(100);
+		//sleep(1);
 	}
 }
 
@@ -476,9 +600,9 @@ void printSpielfeld(str_player* player, str_ball* ball, int score1, int score2) 
 	clrscr();
 
 	// Text fuer Punkte
-	printf("Punkte Spieler 1: ");
-	gotoxy(CONSOLE_WIDTH - 21, 0);
-	printf("Punkte Spieler 2: ");
+	printf("Punkte Spieler 1:");
+	gotoxy(CONSOLE_WIDTH - 20, 0);
+	printf("Punkte Spieler 2:");
 
 	// Punktezahlen ausgeben
 	printScore(score1, score2);
@@ -795,9 +919,9 @@ void printUpdatedPlayer(str_player* player, int id) {
 }
 
 void printScore(int score1, int score2) {
-	gotoxy(19, 0);
+	gotoxy(18, 0);
 	printf("%3d", score1);
-	gotoxy(CONSOLE_WIDTH - 3, 0);
+	gotoxy(CONSOLE_WIDTH - 2, 0);
 	printf("%3d", score2);
 }
 
