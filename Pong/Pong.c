@@ -19,6 +19,9 @@
 #define LEFT_ARROW VK_LEFT
 #define RIGHT_ARROW VK_RIGHT
 
+#define UP_ARROW 72
+#define DOWN_ARROW 80
+
 #define ENTER_KEY 13
 
 const char WALL = (char)219;
@@ -97,6 +100,9 @@ inline int* checkKeysPressed() {
 //Originally I used constants but borland started giving me errors, so I changed to #define - I do realize that is not the best way.
 #define LEFT_ARROW (char)'D'
 #define RIGHT_ARROW (char)'C'
+
+#define UP_ARROW (char)'A'
+#define DOWN_ARROW (char)'B'
 
 #define ENTER_KEY 10
 
@@ -224,6 +230,11 @@ void moveBall(str_ball* ball, str_player* player);
 char waitForAnyKey();
 void printUpdatedPlayer(str_player* player, int id);
 void printScore(int score1, int score2);
+void startscreen();
+void loadGame();
+void exitYN();
+int menuSelector(int x, int y, int yStart);
+int mainMenu();
 
 // ============================================= OS SPEZIFISCHE FUNKTIONEN ================================================= //
 
@@ -295,9 +306,9 @@ void updatePlayer(str_player* player) {
 }
 #endif
 
-// ============================================= MAIN ====================================================================== //
+// ============================================= LoadGame ====================================================================== //
 
-int main() {
+void loadGame() {
 	srand(time(NULL));
 	str_player player[2];
 	str_ball ball;
@@ -311,13 +322,13 @@ int main() {
 
 	player[0].pos = (CONSOLE_WIDTH - player[0].length) / 2;
 	player[1].pos = (CONSOLE_WIDTH - player[1].length) / 2;
-
 	ball.x = 50;
 	ball.y = 10;
 	// ball.prev_x = ball.x;
 	// ball.prev_y = ball.y;
 	// ball.dest = rand() % 12;
 	ball.dest = 0;
+	
 
 	printSpielfeld(player, &ball, score1, score2);
 
@@ -425,16 +436,16 @@ void printOhneBall() {
 
 void printSpielfeld(str_player* player, str_ball* ball, int score1, int score2) {
 	// Konsolengroesse aendern
-	setWindowSize(CONSOLE_WIDTH, CONSOLE_HEIGHT);
+	//setWindowSize(CONSOLE_WIDTH, CONSOLE_HEIGHT);
 
 	// Fenstertitel
-	setWindowTitle();
+	//setWindowTitle();
 
 	// clear screen
 	clrscr();
 
 	// Cursor unsichtbar machen
-	hideCursor();
+	//hideCursor();
 
 	// Text fuer Punkte
 	printf("Punkte Spieler 1: ");
@@ -762,4 +773,185 @@ void printScore(int score1, int score2) {
 	printf("%3d", score2);
 }
 
-// ======================================== Diedeler ist ein Hurensohn//
+int main(){
+
+	// Konsolengroesse aendern
+	setWindowSize(CONSOLE_WIDTH, CONSOLE_HEIGHT);
+
+	// Fenstertitel
+	setWindowTitle();
+
+	// clear screen
+	clrscr();
+
+	// Cursor unsichtbar machen
+	hideCursor();
+
+
+	startscreen();
+
+	do{
+		switch (mainMenu()){
+		case 0:
+			loadGame();
+			break;
+		case 1:
+			//displayHighScores();
+			break;
+		case 2:
+			exitYN();
+			break;
+		}
+	} while (1);	//
+
+	return(0);
+}
+
+int mainMenu(){
+
+	int x = 10, y = 5;
+	int yStart = y;
+
+	int selected;
+
+	clrscr(); //clear the console
+	
+	gotoxy(x, y++);
+	printf("New Game\n");
+	gotoxy(x, y++);
+	printf("HighScore\n");
+	gotoxy(x, y++);
+	printf("Exit\n");
+	gotoxy(x, y++);
+
+	selected = menuSelector(x, y, yStart);
+
+	return(selected);
+}
+
+//Im Menu bewegen 
+int menuSelector(int x, int y, int yStart){
+
+	char key;
+	int i = 0;
+	x = x - 2;
+	gotoxy(x, yStart);
+
+	printf(">");
+
+	gotoxy(0, 0);
+
+
+	do
+	{
+		key = waitForAnyKey();
+		//printf("%c %d", key, (int)key);
+		if (key == (char)UP_ARROW)
+		{
+			gotoxy(x, yStart + i);
+			printf(" ");
+
+			if (yStart >= yStart + i)
+				i = y - yStart - 2;
+			else
+				i--;
+			gotoxy(x, yStart + i);
+			printf(">");
+		}
+		else
+			if (key == (char)DOWN_ARROW)
+			{
+				gotoxy(x, yStart + i);
+				printf(" ");
+
+				if (i + 2 >= y - yStart)
+					i = 0;
+				else
+					i++;
+				gotoxy(x, yStart + i);
+				printf(">");
+			}
+		//gotoxy(1,1);
+		//printf("%d", key);
+	} while (key != (char)ENTER_KEY); //While doesn't equal enter... (13 ASCII code for enter) - note ubuntu is 10
+	return(i);
+}
+
+//	Alternatives ASCII Art
+/*void startscreen(){ 
+	//	ASCII Art Quelle: http://pong.ascii.uk/
+	clrscr();
+
+	for(int i=0; i<((CONSOLE_HEIGHT/2)-6); i++){
+	printf("\n");
+	}
+
+	printf("\t\t\t88888b.  .d88b. 88888b.  .d88b.  \n");
+	printf("\t\t\t888 \"88bd88\"\"88b888 \"88bd88P\"88b\n");
+	printf("\t\t\t888  888888  888888  888888  888 \n");
+	printf("\t\t\t888 d88PY88..88P888  888Y88b 888 \n");
+	printf("\t\t\t88888P\"  \"Y88P\" 888  888 \"Y88888 \n");
+	printf("\t\t\t888                          888 \n");
+	printf("\t\t\t888                     Y8b d88P \n");
+	printf("\t\t\t888                      \"Y88P\"  \n");
+	printf("\t\t\tDruecke irgendeinen Key...... ");
+
+	waitForAnyKey();
+	return;
+}*/
+
+// Note: "\\" schreibt nur einmal "\"
+void startscreen(){ 
+	//	ASCII Art Quelle: http://pong.ascii.uk/
+
+	clrscr();
+
+	gotoxy((CONSOLE_WIDTH / 2) -13, (CONSOLE_HEIGHT / 2)-4); //	Mein Versuch das ganze irgendwie mittig zu machen...
+															//	Alternative: vgl. oben
+	printf(" _ __   ___  _ __   __ _ ");
+
+	gotoxy((CONSOLE_WIDTH / 2)- 13, (CONSOLE_HEIGHT / 2) - 3);
+	printf("| '_ \\ / _ \\| '_ \\ / _` |");
+
+	gotoxy((CONSOLE_WIDTH / 2) - 13, (CONSOLE_HEIGHT / 2) - 2);
+	printf("| |_) | (_) | | | | (_| |");
+
+	gotoxy((CONSOLE_WIDTH / 2) - 13, (CONSOLE_HEIGHT / 2) - 1);
+	printf("| .__/ \\___/|_| |_|\\__, |");
+
+	gotoxy((CONSOLE_WIDTH / 2) - 13, (CONSOLE_HEIGHT / 2) );
+	printf("| |                 __/ |");
+
+	gotoxy((CONSOLE_WIDTH / 2) - 13, (CONSOLE_HEIGHT / 2) + 1);
+	printf("|_|                |___/ ");
+
+	gotoxy((CONSOLE_WIDTH / 2) - 13, (CONSOLE_HEIGHT / 2) + 2);
+	printf("Druecke irgendeinen Key...... ");
+
+	gotoxy(0, 0);
+
+	waitForAnyKey();
+	return;
+}
+
+void exitYN(void){
+	clrscr();
+	char pressed;
+	gotoxy(10, CONSOLE_HEIGHT/2);
+	printf("Bist du sicher, dass du das Spiel beenden willst??(Y/N)\n");
+
+	do
+	{
+		pressed = waitForAnyKey();
+		pressed = tolower(pressed);
+	} while (!(pressed == 'y' || pressed == 'n'));
+
+	if (pressed == 'y')
+	{
+		clrscr(); //clear the console
+		exit(1);
+	}
+	return;
+}
+
+
