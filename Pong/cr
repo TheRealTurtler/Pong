@@ -1,0 +1,107 @@
+#!/bin/bash
+
+# cr -- compile & run tool
+# Stefan Hartinger, March 2017
+
+# --------------------------------------------------------------------------- #
+
+# see this link for some useful command line options:
+#   https://www.thegeekstuff.com/2012/10/gcc-compiler-options/?utm_source=feedburner
+
+OPTIONS="-std=c11 -Wall -Wpedantic -Wextra -Wimplicit-fallthrough -Werror"
+# -o     : set executable file name (used further below)
+# -S     : keep assembly code
+
+LIBS="-lm"
+# -l[lib]: link to library [lib]. Yes, there mustn't be a whitespace between l and argument.
+#	   -lm is libmath.
+#	   -lglut and lGL are needed for glut/openGL projects
+
+# todo:
+# implement a -debug argument that runs the program via valgrind
+# read into the gdb usage and connect this script to gdb.
+
+clear
+tput sgr0    			# Reset text format to the terminal's default
+
+if [ $# -eq 0 ]
+	then
+		echo ""
+		echo no argument provided.
+		echo usage:
+		tput setaf 7				# white
+		printf "   crp ["
+		tput smul				# underline
+		printf "main_file.c"
+		tput rmul				# remove underline
+		printf "] ["
+		tput smul				# underline
+		printf "parameters"
+		tput rmul				# remove underline
+		printf "]\n"
+		echo -e "\e[39m"			# default and line break
+		
+		printf "* "
+		tput smul				# underline
+		printf "main_file.c"
+		tput rmul				# remove underline
+		printf " is a valid C language code file holding the main module.\n"
+		printf "  Put multiple modules in \34quotation marks\34.\n"
+		
+		printf "* "
+		tput smul				# underline
+		printf "parameters"
+		tput rmul				# remove underline
+		printf " is an arbitrary string that is passed on to the compiled programme.\n"
+		
+		echo ""
+		exit 1
+fi
+
+if [ -f $1 ]
+	then
+		INFILE=$1
+		OUTFILE="${INFILE%%.*}"
+		
+		rm -f $OUTFILE
+		
+		tput setaf 2				# green
+		tput smso				# stand out
+		echo ===============================================================================
+		tput rmso				# remove stand out
+		
+		echo attempting to compile
+		echo gcc $INFILE $LIBS $OPTIONS -o $OUTFILE
+		echo ...............................................................................
+		
+		tput sgr0				# Reset text format to the terminal's default
+		echo ""
+		
+		gcc $INFILE $LIBS $OPTIONS -o $OUTFILE
+		
+		echo ""
+		
+		
+		tput setaf 2			# green
+		echo ...............................................................................
+		echo Compilation successfull. Executing $OUTFILE "${@:2}"
+		echo ...............................................................................
+		tput sgr0    			# Reset text format to the terminal's default
+		
+		echo ""
+		./$OUTFILE "${@:2}"
+		echo ""
+		
+		tput setaf 2				# green
+		tput smso				# stand out
+		echo ===============================================================================
+		tput sgr0    				# Reset text format to the terminal's default
+		echo ""
+
+	else
+		printf "no such file: "
+		tput bold
+		printf $1
+		tput sgr0    				# Reset text format to the terminal's default
+		echo ""
+fi
