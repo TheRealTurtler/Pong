@@ -10,28 +10,27 @@
 #include <time.h>
 
 #if defined(_WIN32)
-//Windows Libraries
+// Windows Libraries
 #include <conio.h>
 #include <windows.h>
 
-//Windows Constants
-//Controls
+// Windows Konstanten
+// Controls
 #define LEFT_ARROW VK_LEFT
 #define RIGHT_ARROW VK_RIGHT
-
 #define UP_ARROW VK_UP
 #define DOWN_ARROW VK_DOWN
+#define ENTER_KEY VK_RETURN
 
-#define ENTER_KEY 13
-
+// Zeichen
 const char WALL = (char)219;
 const char BLANK = ' ';
 const char BALL = (char)254;
 const char PLAYER_TOP = (char)220;
 const char PLAYER_BOT = (char)223;
 
-#else
-//Linux Libraries
+#else	// Linux
+// Linux Libraries
 #include <stdlib.h>
 #include <termios.h>
 #include <unistd.h>
@@ -40,18 +39,16 @@ const char PLAYER_BOT = (char)223;
 
 #include <curses.h>
 
-//Linux Constants
+// Linux Constants
 
-//Controls (arrow keys for Ubuntu) 
-//Originally I used constants but borland started giving me errors, so I changed to #define - I do realize that is not the best way.
+// Controls
 #define LEFT_ARROW 260
 #define RIGHT_ARROW 261
-
 #define UP_ARROW 259
 #define DOWN_ARROW 258
-
 #define ENTER_KEY 10
 
+// Zeichen
 const char WALL = '#';
 const char BLANK = ' ';
 const char BALL = 'O';
@@ -154,7 +151,7 @@ void printUpdatedPlayer(str_player* player, int id);
 void printScore(int score1, int score2);
 void startscreen();
 void loadGame();
-void exitYN();
+int exitYN();
 int menuSelector(int x, int y, int yStart);
 int mainMenu();
 void spielende();
@@ -175,6 +172,7 @@ int exitgame();
 
 int main() {
 
+	// Linux -- ncurses initialisieren
 #if !defined(_WIN32)
 	initscr();
 	keypad(stdscr, TRUE);
@@ -197,20 +195,23 @@ int main() {
 	// Startbildschirm
 	startscreen();
 
-	do {
+	int exit = 0;
+
+	while (exit == 0) {
 		switch (mainMenu()) {
-		case 0:
+		case 0:	// New Game
 			loadGame();
 			break;
-		case 1:
-			//displayHighScores();
+		case 1:	// Highscore
+			// TODO >> Highscore
 			break;
-		case 2:
-			exitYN();
+		case 2:	// Exit
+			exit = exitYN();
 			break;
 		}
-	} while (1);	//
+	}
 
+	// Linux -- ncurses beenden
 #if !defined(_WIN32)
 	endwin();
 #endif
@@ -222,8 +223,10 @@ int main() {
 
 #if defined (_WIN32) // Windows
 
+// print umdefinieren, damit es fuer Windows und Linux kompatibel ist
 #define print(...) printf(__VA_ARGS__)
 
+// Fensergroesse aendern
 void setWindowSize(int width, int height) {
 	SMALL_RECT windowSize;
 
@@ -252,14 +255,17 @@ void setWindowSize(int width, int height) {
 	SetWindowPos(hwnd, NULL, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE | SWP_FRAMECHANGED | SWP_NOZORDER | SWP_SHOWWINDOW);
 }
 
+// Fenstername
 inline void setWindowTitle() {
 	SetConsoleTitle("Pong");
 }
 
+// Konsole leeren
 inline void clrscr() {
 	system("cls");
 }
 
+// Cursor ausschalten
 void hideCursor() {
 	CONSOLE_CURSOR_INFO info;
 	info.dwSize = 100;
@@ -267,11 +273,13 @@ void hideCursor() {
 	SetConsoleCursorInfo(GetStdHandle(STD_OUTPUT_HANDLE), &info);
 }
 
+// Tastendruck abfragen
 int* checkKeysPressed() {
 	int pressed[4];
 	// If a key has been pressed
 	if (kbhit()) {
 
+		// links, rechts
 		if (GetKeyState(LEFT_ARROW) & 0x8000) {
 			pressed[0] = LEFT_ARROW;
 		}
@@ -279,6 +287,7 @@ int* checkKeysPressed() {
 			pressed[0] = RIGHT_ARROW;
 		}
 
+		// a, d
 		if (GetKeyState(0x41) & 0x8000) {
 			pressed[1] = 'a';
 		}
@@ -286,6 +295,7 @@ int* checkKeysPressed() {
 			pressed[1] = 'd';
 		}
 
+		// oben, unten
 		if (GetKeyState(UP_ARROW) & 0x8000) {
 			pressed[2] = UP_ARROW;
 		}
@@ -293,7 +303,8 @@ int* checkKeysPressed() {
 			pressed[2] = DOWN_ARROW;
 		}
 
-		if (GetKeyState(VK_RETURN) & 0x8000) {
+		// Enter
+		if (GetKeyState(ENTER_KEY) & 0x8000) {
 			pressed[3] = ENTER_KEY;
 		}
 
@@ -302,6 +313,7 @@ int* checkKeysPressed() {
 	return pressed;
 }
 
+// Spielerposition aktualisieren
 void updatePlayer(str_player* player) {
 	// alte Position speichern
 	player[0].prev_pos = player[0].pos;
@@ -394,7 +406,7 @@ int menuSelector(int x, int y, int yStart) {
 }
 
 
-// https://stackoverflow.com/a/55635979
+// https://stackoverflow.com/a/55635979 (Zu Koordinaten in Konsole springen)
 void gotoxy(int x, int y)
 {
 	COORD coord;
@@ -403,46 +415,60 @@ void gotoxy(int x, int y)
 	SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), coord);
 }
 
+// Pause (Press any key to continue...)
 void sysPause() {
 	system("pause");
 }
 
 #else // Linux
 
+// print umdefinieren, damit es fuer Windows und Linux kompatibel ist
 #define print(...) printw(__VA_ARGS__)
 
+// Konsole leeren
 inline void clrscr()
 {
 	clear();
 	refresh();
 }
 
-inline void setWindowSize(int width, int height) {
+// Fensergroesse aendern
+void setWindowSize(int width, int height) {
 	// TODO >> Fenstergroesse in Linux
 }
 
-inline void setWindowTitle() {
+// Fenstername
+void setWindowTitle() {
 	// TODO >> Fensertitel in Linux
 }
 
-inline void hideCursor() {
+// Cursor ausschalten
+void hideCursor() {
 	// TODO >> Cursor unsichtbar machen
 }
 
+// Tastendruck abfragen
 int checkKeysPressed() {
 	int pressed;
 
+	// Tastendruck abfragen (-1, wenn keine Taste gedrueckt)
 	pressed = getch();
 
 	if (pressed != EXIT_BUTTON) {
+
+		// Key buffer leeren
 		flushinp();
+
 		return pressed;
 	}
 
+	// Key buffer leeren
 	flushinp();
+
 	return 0;
 }
 
+// Spielerposition aktualisieren
 void updatePlayer(str_player* player) {
 	// alte Position speichern
 	player[0].prev_pos = player[0].pos;
@@ -476,7 +502,9 @@ void updatePlayer(str_player* player) {
 	}
 }
 
+// Zeit seit Prozessstart
 void sleepProcess(int milliseconds) {
+	// usleep normalerweise in Mikrosekunden
 	usleep(milliseconds * 1000);
 }
 
@@ -529,10 +557,12 @@ int menuSelector(int x, int y, int yStart) {
 	return i;
 }
 
+// Zu Koordinaten in Konsole springen
 void gotoxy(int x, int y) {
 	move(y, x);
 }
 
+// Pause (Press any key to continue...)
 void sysPause() {
 	while (getch() == -1) {
 		usleep(100);
@@ -543,6 +573,7 @@ void sysPause() {
 
 // ============================================= ALLGEMEINE FUNKTIONEN ===================================================== //
 
+// Spieler zum ersten Mal zeichnen
 void printPlayer(str_player* player, int id) {
 	// linke Wand
 	print("%c", WALL);
@@ -552,13 +583,14 @@ void printPlayer(str_player* player, int id) {
 		print("%c", BLANK);
 	}
 
-	// id == 0 -> Player top
+	// id == 0 -> Spieler oben
 	if (id == 0) {
 		for (int i = 0; i < player[id].length; i++) {
 			print("%c", PLAYER_TOP);
 		}
 	}
-	// id == 1 -> Player bot
+
+	// id == 1 -> Spieler unten
 	else {
 		for (int i = 0; i < player[id].length; i++) {
 			print("%c", PLAYER_BOT);
@@ -574,6 +606,7 @@ void printPlayer(str_player* player, int id) {
 	print("%c", WALL);
 }
 
+// leere Spielfeldzeile zeichnen
 void printOhneBall() {
 	// linke Wand
 	print("%c", WALL);
@@ -587,6 +620,7 @@ void printOhneBall() {
 	print("%c", WALL);
 }
 
+// Spielfeld zeichnen
 void printSpielfeld(str_player* player, str_ball* ball, int score1, int score2) {
 
 	// clear screen
@@ -624,6 +658,7 @@ void printSpielfeld(str_player* player, str_ball* ball, int score1, int score2) 
 	moveBall(ball, player);
 }
 
+// Pallposition aktualisieren
 void updateBall(str_ball* ball) {
 	// alte Koordinaten speichern
 	ball->prev_x = ball->x;
@@ -631,6 +666,7 @@ void updateBall(str_ball* ball) {
 
 	// Ball bewegen
 	switch (ball->dest) {
+	// oben rechts
 	case 0:
 		ball->x += 1;
 		ball->y -= 2;
@@ -643,6 +679,7 @@ void updateBall(str_ball* ball) {
 		ball->x += 2;
 		ball->y -= 1;
 		break;
+	// unten rechts
 	case 3:
 		ball->x += 2;
 		ball->y += 1;
@@ -655,6 +692,7 @@ void updateBall(str_ball* ball) {
 		ball->x += 1;
 		ball->y += 2;
 		break;
+	// unten links
 	case 6:
 		ball->x -= 1;
 		ball->y += 2;
@@ -667,6 +705,7 @@ void updateBall(str_ball* ball) {
 		ball->x -= 2;
 		ball->y += 1;
 		break;
+	// oben links
 	case 9:
 		ball->x -= 2;
 		ball->y -= 1;
@@ -682,68 +721,91 @@ void updateBall(str_ball* ball) {
 	}
 }
 
+// Kollision mit Wand abfragen
 void collisionWall(str_ball* ball) {
 	if (ball->x <= 1 || ball->x >= CONSOLE_WIDTH - 1) {
 		ball->dest = abs(ball->dest - 11);
 	}
 }
 
+// Kollision mit Spieler abfragen
 int collisionPlayer(str_ball* ball, str_player* player) {
 	// Ball am oberen Rand
 	if (ball->y <= HEADER_HEIGHT) {
 		// Kollision mit Spieler 1
+
+		// Erstes Segment (von links)
 		if (ball->x >= player[0].pos && ball->x <= player[0].pos + (player[0].length / 5)) {
-			// Aus welcher Richtung kommt der Ball
+			// Ball von unten links
 			if (ball->dest < 3) {
 				ball->dest = 3;
 				return 1;
 			}
+			// Ball von unten rechts
 			else {
 				ball->dest = 8;
 				return 1;
 			}
 		}
+
+		// Zweites Segment (von links)
 		else if (ball->x >= player[0].pos + (player[0].length / 5) && ball->x <= player[0].pos + 2 * (player[0].length / 5)) {
+			// Ball von unten links
 			if (ball->dest < 3) {
 				ball->dest = 4;
 				return 1;
 			}
+			// Ball von unten rechts
 			else {
 				ball->dest = 7;
 				return 1;
 			}
 		}
+
+		// Drittes Segment (von links)
 		else if (ball->x >= player[0].pos + 2 * (player[0].length / 5) && ball->x <= player[0].pos + 3 * (player[0].length / 5)) {
+			// Ball von unten links
 			if (ball->dest < 3) {
 				ball->dest = 5;
 				return 1;
 			}
+			// Ball von unten rechts
 			else {
 				ball->dest = 6;
 				return 1;
 			}
 		}
+
+		// Viertes Segment (von links)
 		else if (ball->x >= player[0].pos + 3 * (player[0].length / 5) && ball->x <= player[0].pos + 4 * (player[0].length / 5)) {
+			// Ball von unten links
 			if (ball->dest < 3) {
 				ball->dest = 4;
 				return 1;
 			}
+			// Ball von unten rechts
 			else {
 				ball->dest = 7;
 				return 1;
 			}
 		}
+
+		// Fuenftes Segment (von links)
 		else if (ball->x >= player[0].pos + 4 * (player[0].length / 5) && ball->x <= player[0].pos + 5 * (player[0].length / 5)) {
+			// Ball von unten links
 			if (ball->dest < 3) {
 				ball->dest = 3;
 				return 1;
 			}
+			// Ball von unten rechts
 			else {
 				ball->dest = 8;
 				return 1;
 			}
 
 		}
+
+		// Spieler 1 nicht getroffen
 		else {
 			return -1;
 		}
@@ -752,84 +814,118 @@ int collisionPlayer(str_ball* ball, str_player* player) {
 	// Ball am unteren Rand
 	else if (ball->y >= CONSOLE_HEIGHT) {
 		// Kollision mit Spieler 2
+
+		// Erstes Segment (von links)
 		if (ball->x >= player[1].pos && ball->x <= player[1].pos + (player[1].length / 5)) {
+			// Ball von oben links
 			if (ball->dest > 2 && ball->dest < 6) {
 				ball->dest = 2;
 				return 2;
 			}
+			// Ball von oben rechts
 			else {
 				ball->dest = 9;
 				return 2;
 			}
 		}
+
+		// Erstes Segment (von links)
 		else if (ball->x >= player[1].pos + (player[1].length / 5) && ball->x <= player[1].pos + 2 * (player[1].length / 5)) {
+			// Ball von oben links
 			if (ball->dest > 2 && ball->dest < 6) {
 				ball->dest = 1;
 				return 2;
 			}
+			// Ball von oben rechts
 			else {
 				ball->dest = 10;
 				return 2;
 			}
 		}
+
+		// Erstes Segment (von links)
 		else if (ball->x >= player[1].pos + 2 * (player[1].length / 5) && ball->x <= player[1].pos + 3 * (player[1].length / 5)) {
+			// Ball von oben links
 			if (ball->dest > 2 && ball->dest < 6) {
 				ball->dest = 0;
 				return 2;
 			}
+			// Ball von oben rechts
 			else {
 				ball->dest = 11;
 				return 2;
 			}
 		}
+
+		// Erstes Segment (von links)
 		else if (ball->x >= player[1].pos + 3 * (player[1].length / 5) && ball->x <= player[1].pos + 4 * (player[1].length / 5)) {
+			// Ball von oben links
 			if (ball->dest > 2 && ball->dest < 6) {
 				ball->dest = 1;
 				return 2;
 			}
+			// Ball von oben rechts
 			else {
 				ball->dest = 10;
 				return 2;
 			}
 		}
+
+		// Erstes Segment (von links)
 		else if (ball->x >= player[1].pos + 4 * (player[1].length / 5) && ball->x <= player[1].pos + 5 * (player[1].length / 5)) {
+			// Ball von oben links
 			if (ball->dest > 2 && ball->dest < 6) {
 				ball->dest = 2;
 				return 2;
 			}
+			// Ball von oben rechts
 			else {
 				ball->dest = 9;
 				return 2;
 			}
 		}
+
+		// Spieler 2 nicht getroffen
 		else {
 			return -1;
 		}
 	}
+
+	// Ball nicht am oberen oder unteren Rand
 	else {
 		return 0;
 	}
 }
 
+// Neue Ballposition zeichnen und alte Position loeschen
 void moveBall(str_ball* ball, str_player* player) {
+	// Wand und Spieler nicht mit BLANK ueberschreiben
 	if ((ball->prev_x > 1 && ball->prev_x < CONSOLE_WIDTH - 1) && (ball->prev_y > HEADER_HEIGHT && ball->prev_y < CONSOLE_HEIGHT)) {
 		gotoxy(ball->prev_x, ball->prev_y);
 		print("%c", BLANK);
 	}
 
+	// Ball ist innerhalb der Waende
 	if (ball->x > 1 && ball->x < CONSOLE_WIDTH - 1) {
+		// Ball ist am oberen Rand
 		if (ball->y <= HEADER_HEIGHT) {
+			// Ball ist nicht auf dem Spieler
 			if (ball->x < player[0].pos || ball->x > player[0].pos + player[0].length) {
 				gotoxy(ball->x, ball->y);
 				print("%c", BALL);
 			}
 		}
+
+		// Ball ist am unteren Rand
 		else if (ball->y >= CONSOLE_HEIGHT) {
+			// Ball ist nicht auf dem Spieler
 			if (ball->x < player[1].pos || ball->x > player[1].pos + player[1].length) {
 				gotoxy(ball->x, ball->y);
 				print("%c", BALL);
 			}
 		}
+
+		// Ball ist nicht am oberen oder unteren Rand
 		else {
 			gotoxy(ball->x, ball->y);
 			print("%c", BALL);
@@ -845,10 +941,14 @@ void moveBall(str_ball* ball, str_player* player) {
 	return getch();
 }*/
 
+// Neue Spielerposition zeichnen und alte loeschen
 void printUpdatedPlayer(str_player* player, int id) {
 	switch (id) {
+	// Spieler 1
 	case 0:
+		// Spieler hat sich nach rechts bewegt
 		if (player[id].pos > player[id].prev_pos) {
+			// Spieler ist nicht an der Wand (ansonsten wird Wand mit BLANK ueberschrieben)
 			if (player[id].prev_pos > 0) {
 				gotoxy(player[id].prev_pos, HEADER_HEIGHT);
 				print("%c", BLANK);
@@ -856,17 +956,24 @@ void printUpdatedPlayer(str_player* player, int id) {
 			gotoxy(player[id].pos + player[id].length - 1, HEADER_HEIGHT);
 			print("%c", PLAYER_TOP);
 		}
+
+		// Spieler hat sich nach links bewegt
 		else if (player[id].pos < player[id].prev_pos) {
 			gotoxy(player[id].pos + 1, HEADER_HEIGHT);
 			print("%c", PLAYER_TOP);
+			// Spieler ist nicht an der Wand (ansonsten wird Wand mit BLANK ueberschrieben)
 			if (player[id].prev_pos + player[id].length < CONSOLE_WIDTH) {
 				gotoxy(player[id].prev_pos + player[id].length, HEADER_HEIGHT);
 				print("%c", BLANK);
 			}
 		}
 		break;
+
+	// Spieler 2
 	case 1:
+		// Spieler hat sich nach rechts bewegt
 		if (player[id].pos > player[id].prev_pos) {
+			// Spieler ist nicht an der Wand (ansonsten wird Wand mit BLANK ueberschrieben)
 			if (player[id].prev_pos > 0) {
 				gotoxy(player[id].prev_pos, CONSOLE_HEIGHT);
 				print("%c", BLANK);
@@ -874,9 +981,12 @@ void printUpdatedPlayer(str_player* player, int id) {
 			gotoxy(player[id].pos + player[id].length - 1, CONSOLE_HEIGHT);
 			print("%c", PLAYER_BOT);
 		}
+
+		// Spieler hat sich nach links bewegt
 		else if (player[id].pos < player[id].prev_pos) {
 			gotoxy(player[id].pos + 1, CONSOLE_HEIGHT);
 			print("%c", PLAYER_BOT);
+			// Spieler ist nicht an der Wand (ansonsten wird Wand mit BLANK ueberschrieben)
 			if (player[id].prev_pos + player[id].length < CONSOLE_WIDTH) {
 				gotoxy(player[id].prev_pos + player[id].length, CONSOLE_HEIGHT);
 				print("%c", BLANK);
@@ -886,6 +996,7 @@ void printUpdatedPlayer(str_player* player, int id) {
 	}
 }
 
+// Punktezahl schreiben
 void printScore(int score1, int score2) {
 	gotoxy(18, 0);
 	print("%3d", score1);
@@ -893,6 +1004,7 @@ void printScore(int score1, int score2) {
 	print("%3d", score2);
 }
 
+// Spiel starten
 void loadGame() {
 	srand(time(NULL));
 	str_player player[2];
@@ -903,6 +1015,7 @@ void loadGame() {
 	int score2 = 0;
 	int gameover = 0;
 
+	// Linux -- Startzeit festlegen
 #if !defined(_WIN32)
 	struct timeval start, end;
 	long secs, usecs;
@@ -910,33 +1023,40 @@ void loadGame() {
 	gettimeofday(&start, NULL);
 #endif
 
+	// Schwierigkeitsgrad
 	int difficulty = setschwierigkeitsgrad(player);
+
+	// Spielfeldgroesse
 	setmapgrosse();
 
+	// Spielerposition
 	player[0].pos = (CONSOLE_WIDTH - player[0].length) / 2;
 	player[1].pos = (CONSOLE_WIDTH - player[1].length) / 2;
 	// TODO >> player.length gerade/ ungerade (Spielfeldbreite ungerade -> Ball in der Mitte, aber Spieler nicht)
 
-	// Debug
+	// Ballposition
+		// Debug
 	ball.x = 50;
 	ball.y = 10;
 	ball.dest = 0;
 	// ball.prev_x = ball.x;
 	// ball.prev_y = ball.y;
 
-	// Release
+		// Release
 	// ball.x = 1 + (CONSOLE_WIDTH - 2) / 2;
 	// ball.y = HEADER_HEIGHT + (CONSOLE_HEIGHT - HEADER_HEIGHT) / 2;
 	// ball.dest = rand() % 12;
 
-
+	// Spielfeld zeichnen
 	printSpielfeld(player, &ball, score1, score2);
 
+	// Spiel
 	while (gameover == 0) {
 		updatePlayer(player);
 		printUpdatedPlayer(player, 0);
 		printUpdatedPlayer(player, 1);
 
+		// Vergangene Zeit seit Prozessstart
 #if defined(_WIN32)
 		vergangeneZeit = clock();
 #else // https://stackoverflow.com/a/9871230 (Vergangene Zeit seit Prozessstart im Millisekunden
@@ -949,27 +1069,30 @@ void loadGame() {
 		if ((vergangeneZeit - zeit - 1000) > 0) { // Geschwindigkeit Ball
 			updateBall(&ball);
 			collisionWall(&ball);
+
 			switch (collisionPlayer(&ball, player)) {
+			// Game Over
 			case -1:
-				// Game Over
 				spielende();
 				gameover = 1;
 				break;
+			// Nichts, Ball nicht in Spielernaehe
 			case 0:
-				// Nichts, Ball nicht in Spielernaehe
 				break;
+			// Punkt fuer Spieler 1
 			case 1:
-				// Punkt fuer Spieler 1
 				score1++;
 				break;
+			// Punkt fuer Spieler 2
 			case 2:
-				// Punkt fuer Spieler 2
 				score2++;
 				break;
 			}
+
 			printScore(score1, score2);
 			moveBall(&ball, player);
 
+			// Zeit reset
 #if defined(_WIN32)
 			zeit = clock();
 #else // https://stackoverflow.com/a/9871230 (Vergangene Zeit seit Prozessstart im Millisekunden
@@ -984,6 +1107,7 @@ void loadGame() {
 	}
 }
 
+// Hauptmenue
 int mainMenu() {
 
 	int x = 10, y = 5;
@@ -1029,9 +1153,10 @@ int mainMenu() {
 	return;
 }*/
 
-// Note: "\\" schreibt nur einmal "\"
+// Startbildschirm
 void startscreen() {
 	//	ASCII Art Quelle: http://pong.ascii.uk/
+	// Note: "\\" schreibt nur einmal "\"
 
 	clrscr();
 
@@ -1059,6 +1184,7 @@ void startscreen() {
 	sysPause();
 }
 
+// Spiel beenden
 int exitgame() {
 
 	int x = 10, y = 5;
@@ -1081,7 +1207,9 @@ int exitgame() {
 	return selected;
 }
 
-void exitYN() {
+// Spiel beenden
+// TODO >> exitYN eigentlich ueberfluessig
+int exitYN() {
 	clrscr();
 
 	int ende = exitgame();
@@ -1089,10 +1217,13 @@ void exitYN() {
 	if (ende == 0)
 	{
 		clrscr(); //clear the console
-		exit(1);
+		return 1;
 	}
+
+	return 0;
 }
 
+// Schwierigkeitsgrad auswaehlen
 int getschwierigkeitsgrad() {
 
 	int x = 10, y = 5;
@@ -1116,6 +1247,7 @@ int getschwierigkeitsgrad() {
 	return selected;
 }
 
+// Spielfeldgroesse auswaehlen
 int getmapgrosse() {
 
 	int x = 10, y = 5;
@@ -1139,6 +1271,7 @@ int getmapgrosse() {
 	return selected;
 }
 
+// Schwierigkeitsgrad festlegen
 int setschwierigkeitsgrad(str_player* player) {
 
 	int difficulty = getschwierigkeitsgrad() + 1;
@@ -1161,6 +1294,7 @@ int setschwierigkeitsgrad(str_player* player) {
 	return difficulty;
 }
 
+// Spielfeldgroesse festlegen
 void setmapgrosse() {
 	int grosse = getmapgrosse() + 1;
 
@@ -1170,6 +1304,7 @@ void setmapgrosse() {
 	setWindowSize(CONSOLE_WIDTH, CONSOLE_HEIGHT);
 }
 
+// Game Over screen
 void spielende() {
 	clrscr();
 
