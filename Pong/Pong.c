@@ -30,77 +30,27 @@ const char BALL = (char)254;
 const char PLAYER_TOP = (char)220;
 const char PLAYER_BOT = (char)223;
 
-
-// https://stackoverflow.com/a/55635979
-void gotoxy(int x, int y)
-{
-	COORD coord;
-	coord.X = x;
-	coord.Y = y;
-	SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), coord);
-}
-
-void setWindowSize(int width, int height) {
-	SMALL_RECT windowSize;
-
-	windowSize.Top = 0;
-	windowSize.Left = 0;
-	windowSize.Right = width;
-	windowSize.Bottom = height;
-
-	COORD coord;
-	coord.X = width + 1;
-	coord.Y = height + 1;
-
-	HANDLE Handle = GetStdHandle(STD_OUTPUT_HANDLE);
-	SetConsoleScreenBufferSize(Handle, coord);				// Textbuffergroesse setzen (kein Scrollbalken)
-	SetConsoleWindowInfo(Handle, TRUE, &windowSize);		// Fenstergroesse setzen
-
-	// https://stackoverflow.com/a/46145911 (Entfert maximieren Button)
-	HWND hwnd = GetConsoleWindow();
-	DWORD style = GetWindowLong(hwnd, GWL_STYLE);
-	style &= ~WS_MAXIMIZEBOX;
-	SetWindowLong(hwnd, GWL_STYLE, style);
-	SetWindowPos(hwnd, NULL, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE | SWP_FRAMECHANGED | SWP_NOZORDER | SWP_SHOWWINDOW);
-}
-
-inline void setWindowTitle() {
-	SetConsoleTitle("Pong");
-}
-
-inline void clrscr() {
-	system("cls");
-}
-
-void hideCursor() {
-	CONSOLE_CURSOR_INFO info;
-	info.dwSize = 100;
-	info.bVisible = FALSE;
-	SetConsoleCursorInfo(GetStdHandle(STD_OUTPUT_HANDLE), &info);
-}
-
 #else
 //Linux Libraries
 #include <stdlib.h>
 #include <termios.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <sys/time.h>
 
-#include <sys/select.h>
-#include <stropts.h>
-#include <sys/ioctl.h>
+#include <curses.h>
 
 //Linux Constants
 
 //Controls (arrow keys for Ubuntu) 
 //Originally I used constants but borland started giving me errors, so I changed to #define - I do realize that is not the best way.
-#define LEFT_ARROW (char)'D'
-#define RIGHT_ARROW (char)'C'
+#define LEFT_ARROW (char)260
+#define RIGHT_ARROW (char)261
 
-#define UP_ARROW (char)'A'
-#define DOWN_ARROW (char)'B'
+#define UP_ARROW (char)259
+#define DOWN_ARROW (char)258
 
-#define ENTER_KEY 10
+#define ENTER_KEY KEY_ENTER
 
 const char WALL = '#';
 const char BLANK = ' ';
@@ -108,6 +58,7 @@ const char BALL = 'O';
 const char PLAYER_TOP = '=';
 const char PLAYER_BOT = '=';
 
+/*
 //Linux Functions - These functions emulate some functions from the windows only conio header file
 //Code: http://ubuntuforums.org/showthread.php?t=549023
 void gotoxy(int x, int y)
@@ -156,26 +107,8 @@ char getch()
 	//printf("%c",c);
 	return(c);
 }
+*/
 
-
-static inline void clrscr()
-{
-	system("clear");
-	return;
-}
-
-static inline void setWindowSize(int width, int height) {
-	// TODO >> Fenstergroesse in Linux
-	printf("%d %d", width, height);
-}
-
-static inline void setWindowTitle() {
-	// TODO >> Fensertitel in Linux
-}
-
-static inline void hideCursor() {
-	// TODO >> Cursor unsichtbar machen
-}
 //End linux Functions
 #endif
 
@@ -211,7 +144,6 @@ void updatePlayer(str_player* player);
 void printPlayer(str_player* player, int id);
 void printOhneBall();
 void printSpielfeld(str_player* player, str_ball* ball, int score1, int score2);
-// void movePlayer(str_player* player, int id);
 void updateBall(str_ball* ball);
 void collisionWall(str_ball* ball);
 int collisionPlayer(str_ball* ball, str_player* player);
@@ -230,11 +162,106 @@ int getmapgrosse();
 int setschwierigkeitsgrad(str_player* player);
 void setmapgrosse();
 void sleepProcess(int milliseconds);
+void setWindowSize(int width, int height);
+void setWindowTitle();
+void clrscr();
+void hideCursor();
+void gotoxy(int x, int y);
+void sysPause();
+
+// ============================================= MAIN ====================================================================== //
+
+int main() {
+
+#if !defined(_WIN32)
+	initscr();
+	keypad(stdscr, TRUE);
+	noecho();
+#endif
+
+	// Konsolengroesse aendern
+	setWindowSize(CONSOLE_WIDTH, CONSOLE_HEIGHT);
+
+	// Fenstertitel
+	setWindowTitle();
+
+	// clear screen
+	clrscr();
+
+	// Cursor unsichtbar machen
+	hideCursor();
+
+	// Startbildschirm
+	startscreen();
+
+	do {
+		switch (mainMenu()) {
+		case 0:
+			loadGame();
+			break;
+		case 1:
+			//displayHighScores();
+			break;
+		case 2:
+			exitYN();
+			break;
+		}
+	} while (1);	//
+
+#if !defined(_WIN32)
+	endwin();
+#endif
+
+	return 0;
+}
 
 // ============================================= OS SPEZIFISCHE FUNKTIONEN ================================================= //
 
 #if defined (_WIN32) // Windows
-inline int* checkKeysPressed() {
+void setWindowSize(int width, int height) {
+	SMALL_RECT windowSize;
+
+	windowSize.Top = 0;
+	windowSize.Left = 0;
+	windowSize.Right = width;
+	windowSize.Bottom = height;
+
+	COORD coord;
+	coord.X = width + 1;
+	coord.Y = height + 1;
+
+	HANDLE Handle = GetStdHandle(STD_OUTPUT_HANDLE);
+
+	//coord = GetLargestConsoleWindowSize(Handle);
+	SetConsoleScreenBufferSize(Handle, coord);				// Textbuffergroesse setzen (kein Scrollbalken)
+	SetConsoleWindowInfo(Handle, TRUE, &windowSize);		// Fenstergroesse setzen
+
+	// https://stackoverflow.com/a/46145911 (Entfert maximieren Button)
+	HWND hwnd = GetConsoleWindow();
+	DWORD style = GetWindowLong(hwnd, GWL_STYLE);
+	style &= ~WS_MAXIMIZEBOX;
+	style &= ~WS_HSCROLL;
+	style &= ~WS_VSCROLL;
+	SetWindowLong(hwnd, GWL_STYLE, style);
+	SetWindowPos(hwnd, NULL, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE | SWP_FRAMECHANGED | SWP_NOZORDER | SWP_SHOWWINDOW);
+}
+
+inline void setWindowTitle() {
+	SetConsoleTitle("Pong");
+}
+
+inline void clrscr() {
+	system("cls");
+}
+
+void hideCursor() {
+	CONSOLE_CURSOR_INFO info;
+	info.dwSize = 100;
+	info.bVisible = FALSE;
+	SetConsoleCursorInfo(GetStdHandle(STD_OUTPUT_HANDLE), &info);
+}
+
+int* checkKeysPressed() {
 	int pressed[6];
 	// If a key has been pressed
 	if (kbhit()) {
@@ -322,95 +349,188 @@ void updatePlayer(str_player* player) {
 	}
 }
 
+// Zeit seit Prozessstart
 inline void sleepProcess(int milliseconds) {
 	Sleep(milliseconds);
 }
-#else // Linux
-/*
-int getch() {
-	int ch;
-	struct termios tc_attrib;
-	if (tcgetattr(STDIN_FILENO, &tc_attrib))
-		return -1;
 
-	tcflag_t lflag = tc_attrib.c_lflag;
-	tc_attrib.c_lflag &= ~ICANON & ~ECHO;
+// Im Menu bewegen 
+int menuSelector(int x, int y, int yStart) {
+	int enter = 0;
+	char key;
+	int i = 0;
+	x = x - 2;
+	gotoxy(x, yStart);
 
-	if (tcsetattr(STDIN_FILENO, TCSANOW, &tc_attrib))
-		return -1;
+	printf(">");
 
-	ch = getchar();
+	while (enter == 0) {
+		int* pressed;
+		pressed = checkKeysPressed();
 
-	tc_attrib.c_lflag = lflag;
-	tcsetattr(STDIN_FILENO, TCSANOW, &tc_attrib);
-	return ch;
-}
-*/
+		if (pressed[3] == UP_ARROW) {
+			gotoxy(x, yStart + i);
+			printf(" ");
 
-/*
-int kbhit() {
-	static const int STDIN = 0;
-	static int initialized = 0;
+			if (yStart >= yStart + i) {
+				i = y - yStart - 2;
+			}
+			else {
+				i--;
+			}
+			gotoxy(x, yStart + i);
+			printf(">");
+		}
+		else
+			if (pressed[3] == DOWN_ARROW)
+			{
+				gotoxy(x, yStart + i);
+				printf(" ");
 
-	if (!initialized) {
-		// Use termios to turn off line buffering
-		struct termios term;
-		tcgetattr(STDIN, &term);
-		term.c_lflag &= ~ICANON;
-		tcsetattr(STDIN, TCSANOW, &term);
-		setbuf(stdin, NULL);
-		initialized = 1;
+				if (i + 2 >= y - yStart) {
+					i = 0;
+				}
+				else {
+					i++;
+				}
+				gotoxy(x, yStart + i);
+				printf(">");
+			}
+		if (pressed[4] == ENTER_KEY) {
+			enter = 1;
+		}
+		sleepProcess(100);
 	}
-
-	int bytesWaiting;
-	ioctl(STDIN, FIONREAD, &bytesWaiting);
-	return bytesWaiting;
+	return i;
 }
-*/
 
-/*
-char getch()
+void exitYN() {
+	clrscr();
+	int* pressed;
+	gotoxy(10, CONSOLE_HEIGHT / 2);
+	printf("Bist du sicher, dass du das Spiel beenden willst?(Y/N)\n");
+
+	do
+	{
+		pressed = checkKeysPressed();
+		sleepProcess(100);
+	} while (!(pressed[5] == 'y' || pressed[5] == 'n'));
+
+	if (pressed[5] == 'y')
+	{
+		clrscr(); //clear the console
+		exit(1);
+	}
+	return;
+}
+
+int getschwierigkeitsgrad() {
+	//int speed;
+	clrscr();
+	int selected = 0;
+
+	gotoxy(10, 5);
+	printf("Waehle die Nummer des gewuenschten Schwierigkeitsgrades aus:\n");
+	printf("\t 1. leicht");
+	printf("\t 2. mittel");
+	printf("\t 3. schwer");
+
+	while (selected == 0) {
+		int* pressed;
+		pressed = checkKeysPressed();
+
+		switch (pressed[2]) {
+		case 1:
+			return 1;
+			break;
+		case 2:
+			return 2;
+			break;
+		case 3:
+			return 3;
+			break;
+		}
+		
+		sleepProcess(100);
+	}
+}
+
+int getmapgrosse() {
+	int selected = 0;
+
+	clrscr();
+
+	gotoxy(10, 5);
+	printf("Waehle die Nummer der gewuenschten Map groesse:\n");
+	printf("\t 1. klein");
+	printf("\t 2. mittel");
+	printf("\t 3. gross");
+
+	sleepProcess(100);
+
+	while (selected == 0) {
+		int* pressed;
+		pressed = checkKeysPressed();
+
+		switch (pressed[2]) {
+		case 1:
+			return 1;
+			break;
+		case 2:
+			return 2;
+			break;
+		case 3:
+			return 3;
+			break;
+		}
+
+		sleepProcess(50);
+	}
+}
+
+// https://stackoverflow.com/a/55635979
+void gotoxy(int x, int y)
 {
-	char pressed;
-	system("stty raw");
-	pressed = getch();
-		// https://stackoverflow.com/a/11432632 Pfeiltasten mit getch()
-		if (pressed == '\033') {	// if the first value is esc
-			getch();				// skip the [
-			pressed = getch();		// the real value
-
-			return pressed;
-		}
-		else {
-			return pressed;
-		}
-	system("stty sane");
-	//printf("%c",c);
-	return pressed;
+	COORD coord;
+	coord.X = x;
+	coord.Y = y;
+	SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), coord);
 }
-*/
+
+void sysPause() {
+	system("pause");
+}
+
+#else // Linux
+inline void clrscr()
+{
+	clear();
+}
+
+inline void setWindowSize(int width, int height) {
+	// TODO >> Fenstergroesse in Linux
+}
+
+inline void setWindowTitle() {
+	// TODO >> Fensertitel in Linux
+}
+
+inline void hideCursor() {
+	// TODO >> Cursor unsichtbar machen
+}
 
 int checkKeysPressed() {
 	int pressed;
 
 	// If a key has been pressed
-	if (kbhit()) {
+	//if (kbhit()) {
 		pressed = getch();
-		if (pressed == '\033') {	// if the first value is esc
-			getch();				// skip the [
-			pressed = getch();			// the real value
 
-			if (pressed == LEFT_ARROW || pressed == RIGHT_ARROW) {
-				return pressed;
-			}
-			else if (pressed == EXIT_BUTTON) {
-				// pauseMenu();
-			}
-		}
-		else if (pressed == 'a' || pressed == 'd') {
+		if (pressed != EXIT_BUTTON) {
 			return pressed;
 		}
-	}
+	//}
+
 	return 0;
 }
 
@@ -447,84 +567,155 @@ void updatePlayer(str_player* player) {
 	}
 }
 
-/*
 void sleepProcess(int milliseconds) {
-	struct timespec ts;
-	ts.tv_sec = milliseconds / 1000;
-	ts.tv_nsec = (milliseconds % 1000) * 1000000;
-	nanosleep(&ts, NULL);
+	usleep(milliseconds * 1000);
 }
-*/
-#endif
 
-// ============================================= LoadGame ====================================================================== //
+// Im Menue bewegen
+int menuSelector(int x, int y, int yStart) {
+	int enter = 0;
+	int i = 0;
+	x = x - 2;
+	gotoxy(x, yStart);
 
-void loadGame() {
-	srand(time(NULL));
-	str_player player[2];
-	str_ball ball;
-	int zeit = 0;
-	int score1 = 0;
-	int score2 = 0;
-	int gameover = 0;
+	printf(">");
 
-	int difficulty = setschwierigkeitsgrad(player);
-	setmapgrosse();
+	while (enter == 0) {
+		int pressed;
+		pressed = checkKeysPressed();
 
-	player[0].pos = (CONSOLE_WIDTH - player[0].length) / 2;
-	player[1].pos = (CONSOLE_WIDTH - player[1].length) / 2;
-	// TODO >> player.length gerade/ ungerade (Spielfeldbreite ungerade -> Ball in der Mitte, aber Spieler nicht)
-	
-	// Debug
-	ball.x = 50;
-	ball.y = 10;
-	ball.dest = 0;
-	// ball.prev_x = ball.x;
-	// ball.prev_y = ball.y;
+		if (pressed == UP_ARROW) {
+			gotoxy(x, yStart + i);
+			printf(" ");
 
-	// Release
-	// ball.x = 1 + (CONSOLE_WIDTH - 2) / 2;
-	// ball.y = HEADER_HEIGHT + (CONSOLE_HEIGHT - HEADER_HEIGHT) / 2;
-	// ball.dest = rand() % 12;
-
-
-	printSpielfeld(player, &ball, score1, score2);
-
-	while (gameover == 0) {
-		updatePlayer(player);
-		printUpdatedPlayer(player, 0);
-		printUpdatedPlayer(player, 1);
-
-		if ((clock() - zeit - 1000) > 0) { // Geschwindigkeit Ball
-			updateBall(&ball);
-			collisionWall(&ball);
-			switch (collisionPlayer(&ball, player)) {
-			case -1:
-				// Game Over
-				spielende();
-				gameover = 1;
-				break;
-			case 0:
-				// Nichts, Ball nicht in Spielernaehe
-				break;
-			case 1:
-				// Punkt fuer Spieler 1
-				score1++;
-				break;
-			case 2:
-				// Punkt fuer Spieler 2
-				score2++;
-				break;
+			if (yStart >= yStart + i) {
+				i = y - yStart - 2;
 			}
-			printScore(score1, score2);
-			moveBall(&ball, player);
-			zeit = clock();
+			else {
+				i--;
+			}
+			gotoxy(x, yStart + i);
+			printf(">");
+		}
+		else
+			if (pressed == DOWN_ARROW)
+			{
+				gotoxy(x, yStart + i);
+				printf(" ");
+
+				if (i + 2 >= y - yStart) {
+					i = 0;
+				}
+				else {
+					i++;
+				}
+				gotoxy(x, yStart + i);
+				printf(">");
+			}
+		if (pressed == ENTER_KEY) {
+			enter = 1;
+		}
+		sleepProcess(100);
+	}
+	return i;
+}
+
+void exitYN() {
+	clrscr();
+	int pressed;
+	gotoxy(10, CONSOLE_HEIGHT / 2);
+	printf("Bist du sicher, dass du das Spiel beenden willst?(Y/N)\n");
+
+	do
+	{
+		pressed = checkKeysPressed();
+		sleepProcess(100);
+	} while (!(pressed == 'y' || pressed == 'n'));
+
+	if (pressed == 'y')
+	{
+		clrscr(); //clear the console
+		exit(1);
+	}
+	return;
+}
+
+int getschwierigkeitsgrad() {
+	//int speed;
+	clrscr();
+	int selected = 0;
+
+	gotoxy(10, 5);
+	printf("Waehle die Nummer des gewuenschten Schwierigkeitsgrades aus:\n");
+	printf("\t 1. leicht");
+	printf("\t 2. mittel");
+	printf("\t 3. schwer");
+
+	while (selected == 0) {
+		int pressed;
+		pressed = checkKeysPressed();
+
+		switch (pressed) {
+		case 1:
+			return 1;
+			break;
+		case 2:
+			return 2;
+			break;
+		case 3:
+			return 3;
+			break;
 		}
 
 		sleepProcess(100);
-		//sleep(1);
 	}
+
+	return 0;
 }
+
+int getmapgrosse() {
+	int selected = 0;
+
+	clrscr();
+
+	gotoxy(10, 5);
+	printf("Waehle die Nummer der gewuenschten Map groesse:\n");
+	printf("\t 1. klein");
+	printf("\t 2. mittel");
+	printf("\t 3. gross");
+
+	sleepProcess(100);
+
+	while (selected == 0) {
+		int pressed;
+		pressed = checkKeysPressed();
+
+		switch (pressed) {
+		case 1:
+			return 1;
+			break;
+		case 2:
+			return 2;
+			break;
+		case 3:
+			return 3;
+			break;
+		}
+
+		sleepProcess(50);
+	}
+
+	return 0;
+}
+
+void gotoxy(int x, int y) {
+	move(y, x);
+}
+
+void sysPause() {
+	getchar();
+}
+#endif
 
 // ============================================= ALLGEMEINE FUNKTIONEN ===================================================== //
 
@@ -558,28 +749,6 @@ void printPlayer(str_player* player, int id) {
 	// rechte Wand
 	printf("%c", WALL);
 }
-/*
-void printBall(str_ball* ball) {
-	// linke Wand
-	printf("%c", WALL);
-
-	// blank bis Ball
-	for (int j = 0; j < ball->x; j++) {
-		printf("%c", BLANK);
-	}
-
-	// Ball
-	printf("%c", BALL);
-
-	// blank bis rechte Wand
-	for (int j = ball->x + 1; j < CONSOLE_WIDTH - 1; j++) {
-		printf("%c", BLANK);
-	}
-
-	// rechte Wand
-	printf("%c", WALL);
-}
-*/
 
 void printOhneBall() {
 	// linke Wand
@@ -617,16 +786,8 @@ void printSpielfeld(str_player* player, str_ball* ball, int score1, int score2) 
 
 	// Spielfeld
 	for (int i = HEADER_HEIGHT; i < CONSOLE_HEIGHT - 1; i++) {
-		// Zeile mit Ball
-		/*
-		if (i == ball->y) {
-			printBall(ball);
-		}
-		*/
 		// Zeile ohne Ball
-		//else {
 		printOhneBall();
-		//}
 
 		// naechste Zeile
 		printf("\n");
@@ -638,23 +799,6 @@ void printSpielfeld(str_player* player, str_ball* ball, int score1, int score2) 
 	// Ball
 	moveBall(ball, player);
 }
-
-/*
-void movePlayer(str_player* player, int id) {
-	switch (id) {
-	case 0:
-		gotoxy(0, 0);
-		printUpdatedPlayer(player, 0);
-		break;
-	case 1:
-		gotoxy(0, CONSOLE_HEIGHT);
-		printUpdatedPlayer(player, 1);
-		break;
-	}
-}
-*/
-
-
 
 void updateBall(str_ball* ball) {
 	// alte Koordinaten speichern
@@ -925,38 +1069,88 @@ void printScore(int score1, int score2) {
 	printf("%3d", score2);
 }
 
-int main() {
+void loadGame() {
+	srand(time(NULL));
+	str_player player[2];
+	str_ball ball;
+	int zeit = 0;
+	long vergangeneZeit;
+	int score1 = 0;
+	int score2 = 0;
+	int gameover = 0;
 
-	// Konsolengroesse aendern
-	setWindowSize(CONSOLE_WIDTH, CONSOLE_HEIGHT);
+#if !defined(_WIN32)
+	struct timeval start, end;
+	long secs, usecs;
 
-	// Fenstertitel
-	setWindowTitle();
+	gettimeofday(&start, NULL);
+#endif
 
-	// clear screen
-	clrscr();
+	int difficulty = setschwierigkeitsgrad(player);
+	setmapgrosse();
 
-	// Cursor unsichtbar machen
-	hideCursor();
+	player[0].pos = (CONSOLE_WIDTH - player[0].length) / 2;
+	player[1].pos = (CONSOLE_WIDTH - player[1].length) / 2;
+	// TODO >> player.length gerade/ ungerade (Spielfeldbreite ungerade -> Ball in der Mitte, aber Spieler nicht)
+
+	// Debug
+	ball.x = 50;
+	ball.y = 10;
+	ball.dest = 0;
+	// ball.prev_x = ball.x;
+	// ball.prev_y = ball.y;
+
+	// Release
+	// ball.x = 1 + (CONSOLE_WIDTH - 2) / 2;
+	// ball.y = HEADER_HEIGHT + (CONSOLE_HEIGHT - HEADER_HEIGHT) / 2;
+	// ball.dest = rand() % 12;
 
 
-	startscreen();
+	printSpielfeld(player, &ball, score1, score2);
 
-	do {
-		switch (mainMenu()) {
-		case 0:
-			loadGame();
-			break;
-		case 1:
-			//displayHighScores();
-			break;
-		case 2:
-			exitYN();
-			break;
+	while (gameover == 0) {
+		updatePlayer(player);
+		printUpdatedPlayer(player, 0);
+		printUpdatedPlayer(player, 1);
+
+#if defined(_WIN32)
+		vergangeneZeit = clock();
+#else // https://stackoverflow.com/a/9871230 (Vergangene Zeit seit Prozessstart im Millisekunden
+		gettimeofday(&end, NULL);
+		secs = end.tv_sec - start.tv_sec;
+		usecs = end.tv_usec - start.tv_usec;
+		vergangeneZeit = ((secs) * 1000 + usecs / 1000.0) + 0.5;
+#endif
+
+		if ((vergangeneZeit - zeit - 1000) > 0) { // Geschwindigkeit Ball
+			updateBall(&ball);
+			collisionWall(&ball);
+			switch (collisionPlayer(&ball, player)) {
+			case -1:
+				// Game Over
+				spielende();
+				gameover = 1;
+				break;
+			case 0:
+				// Nichts, Ball nicht in Spielernaehe
+				break;
+			case 1:
+				// Punkt fuer Spieler 1
+				score1++;
+				break;
+			case 2:
+				// Punkt fuer Spieler 2
+				score2++;
+				break;
+			}
+			printScore(score1, score2);
+			moveBall(&ball, player);
+			zeit = clock();
 		}
-	} while (1);	//
 
-	return(0);
+		sleepProcess(100);
+		//sleep(1);
+	}
 }
 
 int mainMenu() {
@@ -978,57 +1172,7 @@ int mainMenu() {
 
 	selected = menuSelector(x, y, yStart);
 
-	return(selected);
-}
-
-//Im Menu bewegen 
-int menuSelector(int x, int y, int yStart) {
-	int enter=0;
-	char key;
-	int i = 0;
-	x = x - 2;
-	gotoxy(x, yStart);
-
-	printf(">");
-
-	while (enter == 0) {
-		int* pressed;
-		pressed = checkKeysPressed();
-
-		if (pressed[3] == UP_ARROW) {
-			gotoxy(x, yStart + i);
-			printf(" ");
-
-			if (yStart >= yStart + i) {
-				i = y - yStart - 2;
-			}
-			else {
-				i--;
-			}
-			gotoxy(x, yStart + i);
-			printf(">");
-		}
-		else
-			if (pressed[3] == DOWN_ARROW)
-			{
-				gotoxy(x, yStart + i);
-				printf(" ");
-
-				if (i + 2 >= y - yStart) {
-					i = 0;
-				}
-				else {
-					i++;
-				}
-				gotoxy(x, yStart + i);
-				printf(">");
-			}
-		if (pressed[4] == ENTER_KEY) { 
-				enter=1; 
-			}
-		Sleep(100);
-	} 
-	return(i);
+	return selected;
 }
 
 //	Alternatives ASCII Art
@@ -1062,114 +1206,29 @@ void startscreen() {
 
 	gotoxy((CONSOLE_WIDTH / 2) - 13, (CONSOLE_HEIGHT / 2) - 4); //	Mein Versuch das ganze irgendwie mittig zu machen...
 															//	Alternative: vgl. oben
-	printf(" _ __   ___  _ __   __ _ ");
+	printw(" _ __   ___  _ __   __ _ \n");
 
 	gotoxy((CONSOLE_WIDTH / 2) - 13, (CONSOLE_HEIGHT / 2) - 3);
-	printf("| '_ \\ / _ \\| '_ \\ / _` |");
+	printw("| '_ \\ / _ \\| '_ \\ / _` |\n");
 
 	gotoxy((CONSOLE_WIDTH / 2) - 13, (CONSOLE_HEIGHT / 2) - 2);
-	printf("| |_) | (_) | | | | (_| |");
+	printw("| |_) | (_) | | | | (_| |\n");
 
 	gotoxy((CONSOLE_WIDTH / 2) - 13, (CONSOLE_HEIGHT / 2) - 1);
-	printf("| .__/ \\___/|_| |_|\\__, |");
+	printw("| .__/ \\___/|_| |_|\\__, |\n");
 
 	gotoxy((CONSOLE_WIDTH / 2) - 13, (CONSOLE_HEIGHT / 2));
-	printf("| |                 __/ |");
+	printw("| |                 __/ |\n");
 
 	gotoxy((CONSOLE_WIDTH / 2) - 13, (CONSOLE_HEIGHT / 2) + 1);
-	printf("|_|                |___/ ");
+	printw("|_|                |___/ \n");
 
 	gotoxy((CONSOLE_WIDTH / 2) - 13, (CONSOLE_HEIGHT / 2) + 2);
-	printf("Druecke irgendeinen Key...... ");
+	printw("Druecke irgendeine Taste... \n");
 
-	gotoxy(0, 0);
+	//gotoxy(0, 0);
 
-	system("pause");
-	return;
-}
-
-void exitYN(void) {
-	clrscr();
-	int* pressed;
-	gotoxy(10, CONSOLE_HEIGHT / 2);
-	printf("Bist du sicher, dass du das Spiel beenden willst??(Y/N)\n");
-
-	do
-	{
-		pressed = checkKeysPressed();
-		Sleep(100);
-	} while (!(pressed[5] == 'y' || pressed[5] == 'n'));
-
-	if (pressed[5] == 'y')
-	{
-		clrscr(); //clear the console
-		exit(1);
-	}
-	return;
-}
-
-int getschwierigkeitsgrad() {
-	//int speed;
-	clrscr();
-	int selected = 0;
-
-	gotoxy(10, 5);
-	printf("Waehle die Nummer des gewuenschten Schwierigkeitsgrades aus:\n");
-	printf("\t 1. leicht");
-	printf("\t 2. mittel");
-	printf("\t 3. schwer");
-
-	while (selected == 0) {
-		int* pressed;
-		pressed = checkKeysPressed();
-
-		switch (pressed[2]) {
-		case 1:
-			return 1;
-			break;
-		case 2:
-			return 2;
-			break;
-		case 3:
-			return 3;
-			break;
-		}
-		
-		Sleep(100);
-	}
-}
-
-int getmapgrosse() {
-	int selected = 0;
-
-	clrscr();
-
-	gotoxy(10, 5);
-	printf("Waehle die Nummer der gewuenschten Map groesse:\n");
-	printf("\t 1. klein");
-	printf("\t 2. mittel");
-	printf("\t 3. gross");
-
-	Sleep(100);
-
-	while (selected == 0) {
-		int* pressed;
-		pressed = checkKeysPressed();
-
-		switch (pressed[2]) {
-		case 1:
-			return 1;
-			break;
-		case 2:
-			return 2;
-			break;
-		case 3:
-			return 3;
-			break;
-		}
-
-		Sleep(100);
-	}
+	sysPause();
 }
 
 int setschwierigkeitsgrad(str_player* player) {
@@ -1215,5 +1274,5 @@ void spielende() {
 
 	setWindowSize(CONSOLE_WIDTH, CONSOLE_HEIGHT);
 
-	system("pause");
+	sysPause();
 }

@@ -17,6 +17,8 @@ LIBS="-lm"
 #	   -lm is libmath.
 #	   -lglut and lGL are needed for glut/openGL projects
 
+ADDLIBS="-lncurses"
+
 # todo:
 # implement a -debug argument that runs the program via valgrind
 # read into the gdb usage and connect this script to gdb.
@@ -71,13 +73,13 @@ if [ -f $1 ]
 		tput rmso				# remove stand out
 		
 		echo attempting to compile
-		echo gcc $INFILE $LIBS $OPTIONS -o $OUTFILE
+		echo gcc $INFILE $LIBS $OPTIONS -o $OUTFILE $ADDLIBS
 		echo ...............................................................................
 		
 		tput sgr0				# Reset text format to the terminal's default
 		echo ""
 		
-		gcc $INFILE $LIBS $OPTIONS -o $OUTFILE
+		gcc $INFILE $LIBS $OPTIONS -o $OUTFILE $ADDLIBS
 		
 		echo ""
 		
