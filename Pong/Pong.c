@@ -168,6 +168,7 @@ void clrscr();
 void hideCursor();
 void gotoxy(int x, int y);
 void sysPause();
+int exitgame();
 
 // ============================================= MAIN ====================================================================== //
 
@@ -262,7 +263,7 @@ void hideCursor() {
 }
 
 int* checkKeysPressed() {
-	int pressed[6];
+	int pressed[4];
 	// If a key has been pressed
 	if (kbhit()) {
 
@@ -280,33 +281,17 @@ int* checkKeysPressed() {
 			pressed[1] = 'd';
 		}
 
-		if (GetKeyState(0x31) & 0x8000) {
-			pressed[2] = 1;
-		}
-		else if (GetKeyState(0x32) & 0x8000) {
-			pressed[2] = 2;
-		}
-		else if (GetKeyState(0x33) & 0x8000) {
-			pressed[2] = 3;
-		}
-
 		if (GetKeyState(UP_ARROW) & 0x8000) {
-			pressed[3] = UP_ARROW;
+			pressed[2] = UP_ARROW;
 		}
 		else if (GetKeyState(DOWN_ARROW) & 0x8000) {
-			pressed[3] = DOWN_ARROW;
+			pressed[2] = DOWN_ARROW;
 		}
 
 		if (GetKeyState(VK_RETURN) & 0x8000) {
-			pressed[4] = ENTER_KEY;
+			pressed[3] = ENTER_KEY;
 		}
 
-		if (GetKeyState(0x59) & 0x8000) {
-			pressed[5] = 'y';
-		}
-		else if (GetKeyState(0x4E) & 0x8000) {
-			pressed[5] = 'n';
-		}
 	}
 
 	return pressed;
@@ -357,7 +342,6 @@ inline void sleepProcess(int milliseconds) {
 // Im Menu bewegen 
 int menuSelector(int x, int y, int yStart) {
 	int enter = 0;
-	char key;
 	int i = 0;
 	x = x - 2;
 	gotoxy(x, yStart);
@@ -368,7 +352,7 @@ int menuSelector(int x, int y, int yStart) {
 		int* pressed;
 		pressed = checkKeysPressed();
 
-		if (pressed[3] == UP_ARROW) {
+		if (pressed[2] == UP_ARROW) {
 			gotoxy(x, yStart + i);
 			printf(" ");
 
@@ -382,7 +366,7 @@ int menuSelector(int x, int y, int yStart) {
 			printf(">");
 		}
 		else
-			if (pressed[3] == DOWN_ARROW)
+			if (pressed[2] == DOWN_ARROW)
 			{
 				gotoxy(x, yStart + i);
 				printf(" ");
@@ -396,7 +380,7 @@ int menuSelector(int x, int y, int yStart) {
 				gotoxy(x, yStart + i);
 				printf(">");
 			}
-		if (pressed[4] == ENTER_KEY) {
+		if (pressed[3] == ENTER_KEY) {
 			enter = 1;
 		}
 		sleepProcess(100);
@@ -404,89 +388,6 @@ int menuSelector(int x, int y, int yStart) {
 	return i;
 }
 
-void exitYN() {
-	clrscr();
-	int* pressed;
-	gotoxy(10, CONSOLE_HEIGHT / 2);
-	printf("Bist du sicher, dass du das Spiel beenden willst?(Y/N)\n");
-
-	do
-	{
-		pressed = checkKeysPressed();
-		sleepProcess(100);
-	} while (!(pressed[5] == 'y' || pressed[5] == 'n'));
-
-	if (pressed[5] == 'y')
-	{
-		clrscr(); //clear the console
-		exit(1);
-	}
-	return;
-}
-
-int getschwierigkeitsgrad() {
-	//int speed;
-	clrscr();
-	int selected = 0;
-
-	gotoxy(10, 5);
-	printf("Waehle die Nummer des gewuenschten Schwierigkeitsgrades aus:\n");
-	printf("\t 1. leicht");
-	printf("\t 2. mittel");
-	printf("\t 3. schwer");
-
-	while (selected == 0) {
-		int* pressed;
-		pressed = checkKeysPressed();
-
-		switch (pressed[2]) {
-		case 1:
-			return 1;
-			break;
-		case 2:
-			return 2;
-			break;
-		case 3:
-			return 3;
-			break;
-		}
-		
-		sleepProcess(100);
-	}
-}
-
-int getmapgrosse() {
-	int selected = 0;
-
-	clrscr();
-
-	gotoxy(10, 5);
-	printf("Waehle die Nummer der gewuenschten Map groesse:\n");
-	printf("\t 1. klein");
-	printf("\t 2. mittel");
-	printf("\t 3. gross");
-
-	sleepProcess(100);
-
-	while (selected == 0) {
-		int* pressed;
-		pressed = checkKeysPressed();
-
-		switch (pressed[2]) {
-		case 1:
-			return 1;
-			break;
-		case 2:
-			return 2;
-			break;
-		case 3:
-			return 3;
-			break;
-		}
-
-		sleepProcess(50);
-	}
-}
 
 // https://stackoverflow.com/a/55635979
 void gotoxy(int x, int y)
@@ -1224,16 +1125,96 @@ void startscreen() {
 	printf("|_|                |___/ \n");
 
 	gotoxy((CONSOLE_WIDTH / 2) - 13, (CONSOLE_HEIGHT / 2) + 2);
-	printf("Druecke irgendeine Taste... \n");
 
 	//gotoxy(0, 0);
 
 	sysPause();
 }
 
+int exitgame() {
+
+	int x = 10, y = 5;
+	int yStart = y;
+
+	int selected;
+
+	clrscr(); //clear the console
+	gotoxy(x - 3, y - 1);
+	printf("Willst du das Spiel wirklich beenden?");
+	gotoxy(x, y++);
+	printf("Ja\n");
+	gotoxy(x, y++);
+	printf("Nein\n");
+	gotoxy(x, y++);
+	
+
+	selected = menuSelector(x, y, yStart);
+
+	return selected;
+}
+
+void exitYN() {
+	clrscr();
+
+	int ende = exitgame();
+
+	if (ende == 0)
+	{
+		clrscr(); //clear the console
+		exit(1);
+	}
+	return;
+}
+
+int getschwierigkeitsgrad() {
+
+	int x = 10, y = 5;
+	int yStart = y;
+
+	int selected;
+
+	clrscr(); //clear the console
+	gotoxy(x - 3, y - 1);
+	printf("Waehle deinen Schwierigkeitsgrad");
+	gotoxy(x, y++);
+	printf("leicht\n");
+	gotoxy(x, y++);
+	printf("mittel\n");
+	gotoxy(x, y++);
+	printf("schwer\n");
+	gotoxy(x, y++);
+
+	selected = menuSelector(x, y, yStart);
+
+	return selected;
+}
+
+int getmapgrosse() {
+
+	int x = 10, y = 5;
+	int yStart = y;
+
+	int selected;
+
+	clrscr(); //clear the console
+	gotoxy(x - 3, y - 1);
+	printf("Waehle deine Map groesse");
+	gotoxy(x, y++);
+	printf("klein\n");
+	gotoxy(x, y++);
+	printf("mittel\n");
+	gotoxy(x, y++);
+	printf("gross\n");
+	gotoxy(x, y++);
+
+	selected = menuSelector(x, y, yStart);
+
+	return selected;
+}
+
 int setschwierigkeitsgrad(str_player* player) {
 
-	int difficulty = getschwierigkeitsgrad();
+	int difficulty = getschwierigkeitsgrad() + 1;
 
 	switch (difficulty) {
 	case 1:
@@ -1254,7 +1235,7 @@ int setschwierigkeitsgrad(str_player* player) {
 }
 
 void setmapgrosse() {
-	int grosse = getmapgrosse();
+	int grosse = getmapgrosse() + 1;
 
 	CONSOLE_HEIGHT = grosse * CONSOLE_HEIGHT;
 	CONSOLE_WIDTH = grosse * CONSOLE_WIDTH;
@@ -1267,7 +1248,6 @@ void spielende() {
 
 	gotoxy(CONSOLE_WIDTH / 2, CONSOLE_HEIGHT / 2);
 	printf("Gameover\n");
-	printf("any Key");
 
 	CONSOLE_HEIGHT = 30;
 	CONSOLE_WIDTH = 100;
