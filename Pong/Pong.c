@@ -1206,25 +1206,25 @@ void startscreen() {
 
 	gotoxy((CONSOLE_WIDTH / 2) - 13, (CONSOLE_HEIGHT / 2) - 4); //	Mein Versuch das ganze irgendwie mittig zu machen...
 															//	Alternative: vgl. oben
-	printw(" _ __   ___  _ __   __ _ \n");
+	printf(" _ __   ___  _ __   __ _ \n");
 
 	gotoxy((CONSOLE_WIDTH / 2) - 13, (CONSOLE_HEIGHT / 2) - 3);
-	printw("| '_ \\ / _ \\| '_ \\ / _` |\n");
+	printf("| '_ \\ / _ \\| '_ \\ / _` |\n");
 
 	gotoxy((CONSOLE_WIDTH / 2) - 13, (CONSOLE_HEIGHT / 2) - 2);
-	printw("| |_) | (_) | | | | (_| |\n");
+	printf("| |_) | (_) | | | | (_| |\n");
 
 	gotoxy((CONSOLE_WIDTH / 2) - 13, (CONSOLE_HEIGHT / 2) - 1);
-	printw("| .__/ \\___/|_| |_|\\__, |\n");
+	printf("| .__/ \\___/|_| |_|\\__, |\n");
 
 	gotoxy((CONSOLE_WIDTH / 2) - 13, (CONSOLE_HEIGHT / 2));
-	printw("| |                 __/ |\n");
+	printf("| |                 __/ |\n");
 
 	gotoxy((CONSOLE_WIDTH / 2) - 13, (CONSOLE_HEIGHT / 2) + 1);
-	printw("|_|                |___/ \n");
+	printf("|_|                |___/ \n");
 
 	gotoxy((CONSOLE_WIDTH / 2) - 13, (CONSOLE_HEIGHT / 2) + 2);
-	printw("Druecke irgendeine Taste... \n");
+	printf("Druecke irgendeine Taste... \n");
 
 	//gotoxy(0, 0);
 
