@@ -44,13 +44,13 @@ const char PLAYER_BOT = (char)223;
 
 //Controls (arrow keys for Ubuntu) 
 //Originally I used constants but borland started giving me errors, so I changed to #define - I do realize that is not the best way.
-#define LEFT_ARROW (char)260
-#define RIGHT_ARROW (char)261
+#define LEFT_ARROW 260
+#define RIGHT_ARROW 261
 
-#define UP_ARROW (char)259
-#define DOWN_ARROW (char)258
+#define UP_ARROW 259
+#define DOWN_ARROW 258
 
-#define ENTER_KEY KEY_ENTER
+#define ENTER_KEY 10
 
 const char WALL = '#';
 const char BLANK = ' ';
@@ -63,10 +63,11 @@ const char PLAYER_BOT = '=';
 //Code: http://ubuntuforums.org/showthread.php?t=549023
 void gotoxy(int x, int y)
 {
-	printf("%c[%d;%df", 0x1B, y, x);
+	print("%c[%d;%df", 0x1B, y, x);
 }
+*/
 
-
+/*
 //http://cboard.cprogramming.com/c-programming/63166-kbhit-linux.html
 int kbhit(void)
 {
@@ -94,9 +95,9 @@ int kbhit(void)
 
 	return 0;
 }
+*/
 
-
-
+/*
 //http://www.experts-exchange.com/Programming/Languages/C/Q_10119844.html - posted by jos
 char getch()
 {
@@ -104,7 +105,7 @@ char getch()
 	system("stty raw");
 	c = getchar();
 	system("stty sane");
-	//printf("%c",c);
+	//print("%c",c);
 	return(c);
 }
 */
@@ -178,6 +179,7 @@ int main() {
 	initscr();
 	keypad(stdscr, TRUE);
 	noecho();
+	nodelay(stdscr, TRUE);
 #endif
 
 	// Konsolengroesse aendern
@@ -219,6 +221,9 @@ int main() {
 // ============================================= OS SPEZIFISCHE FUNKTIONEN ================================================= //
 
 #if defined (_WIN32) // Windows
+
+#define print(...) printf(__VA_ARGS__)
+
 void setWindowSize(int width, int height) {
 	SMALL_RECT windowSize;
 
@@ -346,7 +351,7 @@ int menuSelector(int x, int y, int yStart) {
 	x = x - 2;
 	gotoxy(x, yStart);
 
-	printf(">");
+	print(">");
 
 	while (enter == 0) {
 		int* pressed;
@@ -354,7 +359,7 @@ int menuSelector(int x, int y, int yStart) {
 
 		if (pressed[2] == UP_ARROW) {
 			gotoxy(x, yStart + i);
-			printf(" ");
+			print(" ");
 
 			if (yStart >= yStart + i) {
 				i = y - yStart - 2;
@@ -363,13 +368,13 @@ int menuSelector(int x, int y, int yStart) {
 				i--;
 			}
 			gotoxy(x, yStart + i);
-			printf(">");
+			print(">");
 		}
 		else
 			if (pressed[2] == DOWN_ARROW)
 			{
 				gotoxy(x, yStart + i);
-				printf(" ");
+				print(" ");
 
 				if (i + 2 >= y - yStart) {
 					i = 0;
@@ -378,7 +383,7 @@ int menuSelector(int x, int y, int yStart) {
 					i++;
 				}
 				gotoxy(x, yStart + i);
-				printf(">");
+				print(">");
 			}
 		if (pressed[3] == ENTER_KEY) {
 			enter = 1;
@@ -403,9 +408,13 @@ void sysPause() {
 }
 
 #else // Linux
+
+#define print(...) printw(__VA_ARGS__)
+
 inline void clrscr()
 {
 	clear();
+	refresh();
 }
 
 inline void setWindowSize(int width, int height) {
@@ -423,15 +432,14 @@ inline void hideCursor() {
 int checkKeysPressed() {
 	int pressed;
 
-	// If a key has been pressed
-	//if (kbhit()) {
-		pressed = getch();
+	pressed = getch();
 
-		if (pressed != EXIT_BUTTON) {
-			return pressed;
-		}
-	//}
+	if (pressed != EXIT_BUTTON) {
+		flushinp();
+		return pressed;
+	}
 
+	flushinp();
 	return 0;
 }
 
@@ -479,7 +487,7 @@ int menuSelector(int x, int y, int yStart) {
 	x = x - 2;
 	gotoxy(x, yStart);
 
-	printf(">");
+	print(">");
 
 	while (enter == 0) {
 		int pressed;
@@ -487,7 +495,7 @@ int menuSelector(int x, int y, int yStart) {
 
 		if (pressed == UP_ARROW) {
 			gotoxy(x, yStart + i);
-			printf(" ");
+			print(" ");
 
 			if (yStart >= yStart + i) {
 				i = y - yStart - 2;
@@ -496,13 +504,13 @@ int menuSelector(int x, int y, int yStart) {
 				i--;
 			}
 			gotoxy(x, yStart + i);
-			printf(">");
+			print(">");
 		}
 		else
 			if (pressed == DOWN_ARROW)
 			{
 				gotoxy(x, yStart + i);
-				printf(" ");
+				print(" ");
 
 				if (i + 2 >= y - yStart) {
 					i = 0;
@@ -511,7 +519,7 @@ int menuSelector(int x, int y, int yStart) {
 					i++;
 				}
 				gotoxy(x, yStart + i);
-				printf(">");
+				print(">");
 			}
 		if (pressed == ENTER_KEY) {
 			enter = 1;
@@ -521,147 +529,62 @@ int menuSelector(int x, int y, int yStart) {
 	return i;
 }
 
-void exitYN() {
-	clrscr();
-	int pressed;
-	gotoxy(10, CONSOLE_HEIGHT / 2);
-	printf("Bist du sicher, dass du das Spiel beenden willst?(Y/N)\n");
-
-	do
-	{
-		pressed = checkKeysPressed();
-		sleepProcess(100);
-	} while (!(pressed == 'y' || pressed == 'n'));
-
-	if (pressed == 'y')
-	{
-		clrscr(); //clear the console
-		exit(1);
-	}
-	return;
-}
-
-int getschwierigkeitsgrad() {
-	//int speed;
-	clrscr();
-	int selected = 0;
-
-	gotoxy(10, 5);
-	printf("Waehle die Nummer des gewuenschten Schwierigkeitsgrades aus:\n");
-	printf("\t 1. leicht");
-	printf("\t 2. mittel");
-	printf("\t 3. schwer");
-
-	while (selected == 0) {
-		int pressed;
-		pressed = checkKeysPressed();
-
-		switch (pressed) {
-		case 1:
-			return 1;
-			break;
-		case 2:
-			return 2;
-			break;
-		case 3:
-			return 3;
-			break;
-		}
-
-		sleepProcess(100);
-	}
-
-	return 0;
-}
-
-int getmapgrosse() {
-	int selected = 0;
-
-	clrscr();
-
-	gotoxy(10, 5);
-	printf("Waehle die Nummer der gewuenschten Map groesse:\n");
-	printf("\t 1. klein");
-	printf("\t 2. mittel");
-	printf("\t 3. gross");
-
-	sleepProcess(100);
-
-	while (selected == 0) {
-		int pressed;
-		pressed = checkKeysPressed();
-
-		switch (pressed) {
-		case 1:
-			return 1;
-			break;
-		case 2:
-			return 2;
-			break;
-		case 3:
-			return 3;
-			break;
-		}
-
-		sleepProcess(50);
-	}
-
-	return 0;
-}
-
 void gotoxy(int x, int y) {
 	move(y, x);
 }
 
 void sysPause() {
-	getchar();
+	while (getch() == -1) {
+		usleep(100);
+	}
 }
+
 #endif
 
 // ============================================= ALLGEMEINE FUNKTIONEN ===================================================== //
 
 void printPlayer(str_player* player, int id) {
 	// linke Wand
-	printf("%c", WALL);
+	print("%c", WALL);
 
 	// blank space bis player
 	for (int i = 1; i < player[id].pos; i++) {
-		printf("%c", BLANK);
+		print("%c", BLANK);
 	}
 
 	// id == 0 -> Player top
 	if (id == 0) {
 		for (int i = 0; i < player[id].length; i++) {
-			printf("%c", PLAYER_TOP);
+			print("%c", PLAYER_TOP);
 		}
 	}
 	// id == 1 -> Player bot
 	else {
 		for (int i = 0; i < player[id].length; i++) {
-			printf("%c", PLAYER_BOT);
+			print("%c", PLAYER_BOT);
 		}
 	}
 
 	// blank space bis rechte Wand
 	for (int i = player[id].pos + player[id].length; i < CONSOLE_WIDTH; i++) {
-		printf("%c", BLANK);
+		print("%c", BLANK);
 	}
 
 	// rechte Wand
-	printf("%c", WALL);
+	print("%c", WALL);
 }
 
 void printOhneBall() {
 	// linke Wand
-	printf("%c", WALL);
+	print("%c", WALL);
 
 	// blank bis rechte Wand
 	for (int j = 0; j < CONSOLE_WIDTH - 1; j++) {
-		printf("%c", BLANK);
+		print("%c", BLANK);
 	}
 
 	// rechte Wand
-	printf("%c", WALL);
+	print("%c", WALL);
 }
 
 void printSpielfeld(str_player* player, str_ball* ball, int score1, int score2) {
@@ -670,20 +593,20 @@ void printSpielfeld(str_player* player, str_ball* ball, int score1, int score2) 
 	clrscr();
 
 	// Text fuer Punkte
-	printf("Punkte Spieler 1:");
+	print("Punkte Spieler 1:");
 	gotoxy(CONSOLE_WIDTH - 20, 0);
-	printf("Punkte Spieler 2:");
+	print("Punkte Spieler 2:");
 
 	// Punktezahlen ausgeben
 	printScore(score1, score2);
 
-	printf("\n\n");
+	print("\n\n");
 
 	// Spieler oben
 	printPlayer(player, 0);
 
 	// naechste Zeile
-	printf("\n");
+	print("\n");
 
 	// Spielfeld
 	for (int i = HEADER_HEIGHT; i < CONSOLE_HEIGHT - 1; i++) {
@@ -691,7 +614,7 @@ void printSpielfeld(str_player* player, str_ball* ball, int score1, int score2) 
 		printOhneBall();
 
 		// naechste Zeile
-		printf("\n");
+		print("\n");
 	}
 
 	// Spieler unten
@@ -891,25 +814,25 @@ int collisionPlayer(str_ball* ball, str_player* player) {
 void moveBall(str_ball* ball, str_player* player) {
 	if ((ball->prev_x > 1 && ball->prev_x < CONSOLE_WIDTH - 1) && (ball->prev_y > HEADER_HEIGHT && ball->prev_y < CONSOLE_HEIGHT)) {
 		gotoxy(ball->prev_x, ball->prev_y);
-		printf("%c", BLANK);
+		print("%c", BLANK);
 	}
 
 	if (ball->x > 1 && ball->x < CONSOLE_WIDTH - 1) {
 		if (ball->y <= HEADER_HEIGHT) {
 			if (ball->x < player[0].pos || ball->x > player[0].pos + player[0].length) {
 				gotoxy(ball->x, ball->y);
-				printf("%c", BALL);
+				print("%c", BALL);
 			}
 		}
 		else if (ball->y >= CONSOLE_HEIGHT) {
 			if (ball->x < player[1].pos || ball->x > player[1].pos + player[1].length) {
 				gotoxy(ball->x, ball->y);
-				printf("%c", BALL);
+				print("%c", BALL);
 			}
 		}
 		else {
 			gotoxy(ball->x, ball->y);
-			printf("%c", BALL);
+			print("%c", BALL);
 		}
 	}
 }
@@ -928,17 +851,17 @@ void printUpdatedPlayer(str_player* player, int id) {
 		if (player[id].pos > player[id].prev_pos) {
 			if (player[id].prev_pos > 0) {
 				gotoxy(player[id].prev_pos, HEADER_HEIGHT);
-				printf("%c", BLANK);
+				print("%c", BLANK);
 			}
 			gotoxy(player[id].pos + player[id].length - 1, HEADER_HEIGHT);
-			printf("%c", PLAYER_TOP);
+			print("%c", PLAYER_TOP);
 		}
 		else if (player[id].pos < player[id].prev_pos) {
 			gotoxy(player[id].pos + 1, HEADER_HEIGHT);
-			printf("%c", PLAYER_TOP);
+			print("%c", PLAYER_TOP);
 			if (player[id].prev_pos + player[id].length < CONSOLE_WIDTH) {
 				gotoxy(player[id].prev_pos + player[id].length, HEADER_HEIGHT);
-				printf("%c", BLANK);
+				print("%c", BLANK);
 			}
 		}
 		break;
@@ -946,17 +869,17 @@ void printUpdatedPlayer(str_player* player, int id) {
 		if (player[id].pos > player[id].prev_pos) {
 			if (player[id].prev_pos > 0) {
 				gotoxy(player[id].prev_pos, CONSOLE_HEIGHT);
-				printf("%c", BLANK);
+				print("%c", BLANK);
 			}
 			gotoxy(player[id].pos + player[id].length - 1, CONSOLE_HEIGHT);
-			printf("%c", PLAYER_BOT);
+			print("%c", PLAYER_BOT);
 		}
 		else if (player[id].pos < player[id].prev_pos) {
 			gotoxy(player[id].pos + 1, CONSOLE_HEIGHT);
-			printf("%c", PLAYER_BOT);
+			print("%c", PLAYER_BOT);
 			if (player[id].prev_pos + player[id].length < CONSOLE_WIDTH) {
 				gotoxy(player[id].prev_pos + player[id].length, CONSOLE_HEIGHT);
-				printf("%c", BLANK);
+				print("%c", BLANK);
 			}
 		}
 		break;
@@ -965,9 +888,9 @@ void printUpdatedPlayer(str_player* player, int id) {
 
 void printScore(int score1, int score2) {
 	gotoxy(18, 0);
-	printf("%3d", score1);
+	print("%3d", score1);
 	gotoxy(CONSOLE_WIDTH - 2, 0);
-	printf("%3d", score2);
+	print("%3d", score2);
 }
 
 void loadGame() {
@@ -1046,11 +969,18 @@ void loadGame() {
 			}
 			printScore(score1, score2);
 			moveBall(&ball, player);
+
+#if defined(_WIN32)
 			zeit = clock();
+#else // https://stackoverflow.com/a/9871230 (Vergangene Zeit seit Prozessstart im Millisekunden
+			gettimeofday(&end, NULL);
+			secs = end.tv_sec - start.tv_sec;
+			usecs = end.tv_usec - start.tv_usec;
+			zeit = ((secs) * 1000 + usecs / 1000.0) + 0.5;
+#endif
 		}
 
 		sleepProcess(100);
-		//sleep(1);
 	}
 }
 
@@ -1064,11 +994,11 @@ int mainMenu() {
 	clrscr(); //clear the console
 
 	gotoxy(x, y++);
-	printf("New Game\n");
+	print("New Game\n");
 	gotoxy(x, y++);
-	printf("HighScore\n");
+	print("HighScore\n");
 	gotoxy(x, y++);
-	printf("Exit\n");
+	print("Exit\n");
 	gotoxy(x, y++);
 
 	selected = menuSelector(x, y, yStart);
@@ -1082,18 +1012,18 @@ int mainMenu() {
 	clrscr();
 
 	for(int i=0; i<((CONSOLE_HEIGHT/2)-6); i++){
-	printf("\n");
+	print("\n");
 	}
 
-	printf("\t\t\t88888b.  .d88b. 88888b.  .d88b.  \n");
-	printf("\t\t\t888 \"88bd88\"\"88b888 \"88bd88P\"88b\n");
-	printf("\t\t\t888  888888  888888  888888  888 \n");
-	printf("\t\t\t888 d88PY88..88P888  888Y88b 888 \n");
-	printf("\t\t\t88888P\"  \"Y88P\" 888  888 \"Y88888 \n");
-	printf("\t\t\t888                          888 \n");
-	printf("\t\t\t888                     Y8b d88P \n");
-	printf("\t\t\t888                      \"Y88P\"  \n");
-	printf("\t\t\tDruecke irgendeinen Key...... ");
+	print("\t\t\t88888b.  .d88b. 88888b.  .d88b.  \n");
+	print("\t\t\t888 \"88bd88\"\"88b888 \"88bd88P\"88b\n");
+	print("\t\t\t888  888888  888888  888888  888 \n");
+	print("\t\t\t888 d88PY88..88P888  888Y88b 888 \n");
+	print("\t\t\t88888P\"  \"Y88P\" 888  888 \"Y88888 \n");
+	print("\t\t\t888                          888 \n");
+	print("\t\t\t888                     Y8b d88P \n");
+	print("\t\t\t888                      \"Y88P\"  \n");
+	print("\t\t\tDruecke irgendeinen Key...... ");
 
 	sytem("pause");
 	return;
@@ -1107,26 +1037,24 @@ void startscreen() {
 
 	gotoxy((CONSOLE_WIDTH / 2) - 13, (CONSOLE_HEIGHT / 2) - 4); //	Mein Versuch das ganze irgendwie mittig zu machen...
 															//	Alternative: vgl. oben
-	printf(" _ __   ___  _ __   __ _ \n");
+	print(" _ __   ___  _ __   __ _ \n");
 
 	gotoxy((CONSOLE_WIDTH / 2) - 13, (CONSOLE_HEIGHT / 2) - 3);
-	printf("| '_ \\ / _ \\| '_ \\ / _` |\n");
+	print("| '_ \\ / _ \\| '_ \\ / _` |\n");
 
 	gotoxy((CONSOLE_WIDTH / 2) - 13, (CONSOLE_HEIGHT / 2) - 2);
-	printf("| |_) | (_) | | | | (_| |\n");
+	print("| |_) | (_) | | | | (_| |\n");
 
 	gotoxy((CONSOLE_WIDTH / 2) - 13, (CONSOLE_HEIGHT / 2) - 1);
-	printf("| .__/ \\___/|_| |_|\\__, |\n");
+	print("| .__/ \\___/|_| |_|\\__, |\n");
 
 	gotoxy((CONSOLE_WIDTH / 2) - 13, (CONSOLE_HEIGHT / 2));
-	printf("| |                 __/ |\n");
+	print("| |                 __/ |\n");
 
 	gotoxy((CONSOLE_WIDTH / 2) - 13, (CONSOLE_HEIGHT / 2) + 1);
-	printf("|_|                |___/ \n");
+	print("|_|                |___/ \n");
 
 	gotoxy((CONSOLE_WIDTH / 2) - 13, (CONSOLE_HEIGHT / 2) + 2);
-
-	//gotoxy(0, 0);
 
 	sysPause();
 }
@@ -1140,13 +1068,13 @@ int exitgame() {
 
 	clrscr(); //clear the console
 	gotoxy(x - 3, y - 1);
-	printf("Willst du das Spiel wirklich beenden?");
+	print("Willst du das Spiel wirklich beenden?");
 	gotoxy(x, y++);
-	printf("Ja\n");
+	print("Ja\n");
 	gotoxy(x, y++);
-	printf("Nein\n");
+	print("Nein\n");
 	gotoxy(x, y++);
-	
+
 
 	selected = menuSelector(x, y, yStart);
 
@@ -1163,7 +1091,6 @@ void exitYN() {
 		clrscr(); //clear the console
 		exit(1);
 	}
-	return;
 }
 
 int getschwierigkeitsgrad() {
@@ -1175,13 +1102,13 @@ int getschwierigkeitsgrad() {
 
 	clrscr(); //clear the console
 	gotoxy(x - 3, y - 1);
-	printf("Waehle deinen Schwierigkeitsgrad");
+	print("Waehle deinen Schwierigkeitsgrad");
 	gotoxy(x, y++);
-	printf("leicht\n");
+	print("leicht\n");
 	gotoxy(x, y++);
-	printf("mittel\n");
+	print("mittel\n");
 	gotoxy(x, y++);
-	printf("schwer\n");
+	print("schwer\n");
 	gotoxy(x, y++);
 
 	selected = menuSelector(x, y, yStart);
@@ -1198,13 +1125,13 @@ int getmapgrosse() {
 
 	clrscr(); //clear the console
 	gotoxy(x - 3, y - 1);
-	printf("Waehle deine Map groesse");
+	print("Waehle deine Map groesse");
 	gotoxy(x, y++);
-	printf("klein\n");
+	print("klein\n");
 	gotoxy(x, y++);
-	printf("mittel\n");
+	print("mittel\n");
 	gotoxy(x, y++);
-	printf("gross\n");
+	print("gross\n");
 	gotoxy(x, y++);
 
 	selected = menuSelector(x, y, yStart);
@@ -1247,7 +1174,7 @@ void spielende() {
 	clrscr();
 
 	gotoxy(CONSOLE_WIDTH / 2, CONSOLE_HEIGHT / 2);
-	printf("Gameover\n");
+	print("Gameover\n");
 
 	CONSOLE_HEIGHT = 30;
 	CONSOLE_WIDTH = 100;
