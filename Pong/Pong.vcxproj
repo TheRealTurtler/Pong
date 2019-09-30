@@ -125,6 +125,9 @@
   <ItemGroup>
     <ClCompile Include="Pong.c" />
   </ItemGroup>
+  <ItemGroup>
+    <Text Include="Highscore.txt" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
