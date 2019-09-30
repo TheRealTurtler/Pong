@@ -1077,7 +1077,7 @@ void loadGame() {
 		vergangeneZeit = ((secs) * 1000 + usecs / 1000.0) + 0.5;
 #endif
 
-		if ((vergangeneZeit - zeit - 200) > 0) { // Geschwindigkeit Ball
+		if ((vergangeneZeit - zeit - 1000) > 0) { // Geschwindigkeit Ball
 			updateBall(&ball);
 			collisionWall(&ball);
 
