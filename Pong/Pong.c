@@ -163,8 +163,8 @@ int mainMenu();
 void spielende();
 int getschwierigkeitsgrad();
 int getmapgrosse();
-int setschwierigkeitsgrad(str_player* player);
-void setmapgrosse();
+int setschwierigkeitsgrad(str_player* player, int grosse);
+int setmapgrosse();
 void sleepProcess(int milliseconds);
 void setWindowSize(int width, int height);
 void setWindowTitle();
@@ -1034,11 +1034,11 @@ void loadGame() {
 	gettimeofday(&start, NULL);
 #endif
 
-	// Schwierigkeitsgrad
-	int difficulty = setschwierigkeitsgrad(player);
-
 	// Spielfeldgroesse
-	setmapgrosse();
+	int grosse = setmapgrosse();
+
+	// Schwierigkeitsgrad
+	int difficulty = setschwierigkeitsgrad(player, grosse);
 
 	// Spielerposition
 	player[0].pos = (CONSOLE_WIDTH - player[0].length) / 2;
@@ -1077,7 +1077,7 @@ void loadGame() {
 		vergangeneZeit = ((secs) * 1000 + usecs / 1000.0) + 0.5;
 #endif
 
-		if ((vergangeneZeit - zeit - 200) > 0) { // Geschwindigkeit Ball
+		if ((vergangeneZeit - zeit - 1000) > 0) { // Geschwindigkeit Ball
 			updateBall(&ball);
 			collisionWall(&ball);
 
@@ -1127,7 +1127,7 @@ void loadGame() {
 // Hauptmenue
 int mainMenu() {
 
-	int x = 10, y = 5;
+	int x = 10, y = 5;	//Startpunkt
 	int yStart = y;
 
 	int selected;
@@ -1142,7 +1142,7 @@ int mainMenu() {
 	print("Exit\n");
 	gotoxy(x, y++);
 
-	selected = menuSelector(x, y, yStart);
+	selected = menuSelector(x, y, yStart);	//Im Men� navigieren
 
 	return selected;
 }
@@ -1198,12 +1198,12 @@ void startscreen() {
 
 	gotoxy((CONSOLE_WIDTH / 2) - 13, (CONSOLE_HEIGHT / 2) + 2);
 
-	sysPause();
+	sysPause(); //warte auf user input
 }
 
 // Spiel beenden
 int exitgame() {
-
+	//Gleiche Strucktur wie im Hauptmenu
 	int x = 10, y = 5;
 	int yStart = y;
 
@@ -1219,7 +1219,7 @@ int exitgame() {
 	gotoxy(x, y++);
 
 
-	selected = menuSelector(x, y, yStart);
+	selected = menuSelector(x, y, yStart);	
 
 	return selected;
 }
@@ -1242,7 +1242,7 @@ int exitYN() {
 
 // Schwierigkeitsgrad auswaehlen
 int getschwierigkeitsgrad() {
-
+	//vgl. MainMenu
 	int x = 10, y = 5;
 	int yStart = y;
 
@@ -1259,14 +1259,14 @@ int getschwierigkeitsgrad() {
 	print("schwer\n");
 	gotoxy(x, y++);
 
-	selected = menuSelector(x, y, yStart);
+	selected = menuSelector(x, y, yStart);	
 
 	return selected;
 }
 
 // Spielfeldgroesse auswaehlen
 int getmapgrosse() {
-
+	//vgl. MainMenu
 	int x = 10, y = 5;
 	int yStart = y;
 
@@ -1283,28 +1283,35 @@ int getmapgrosse() {
 	print("gross\n");
 	gotoxy(x, y++);
 
-	selected = menuSelector(x, y, yStart);
+	selected = menuSelector(x, y, yStart);	
 
 	return selected;
 }
 
 // Schwierigkeitsgrad festlegen
-int setschwierigkeitsgrad(str_player* player) {
+int setschwierigkeitsgrad(str_player* player, int grosse) {
 
-	int difficulty = getschwierigkeitsgrad() + 1;
+	int difficulty = getschwierigkeitsgrad() ;	
 
+	//Spieler l�nge muss durch 5 teilbar sein, da wir ihn in der Kollision in 5 Bereiche aufteilen
 	switch (difficulty) {
-	case 1:
-		player[0].length = (CONSOLE_WIDTH / 5);
+	case 0:
+		player[0].length = (CONSOLE_WIDTH / 5);	//Schwiereigkeitsgrad nicht von Spielgr��e abh�ngig
 		player[1].length = (CONSOLE_WIDTH / 5);
 		break;
-	case 2:
+	case 1:
 		player[0].length = (CONSOLE_WIDTH / 10);
 		player[1].length = (CONSOLE_WIDTH / 10);
 		break;
-	case 3:
-		player[0].length = (CONSOLE_WIDTH / 20);
-		player[1].length = (CONSOLE_WIDTH / 20);
+	case 2:
+		if (grosse==1) {
+			player[0].length = (CONSOLE_WIDTH / 15);	//Hier w�re sonst Spieler L�nge 150/20 = 7.5!!!!!!!!!
+			player[1].length = (CONSOLE_WIDTH / 15);
+		}
+		else {
+			player[0].length = (CONSOLE_WIDTH / 20);
+			player[1].length = (CONSOLE_WIDTH / 20);
+		}
 		break;
 	}
 
@@ -1312,28 +1319,64 @@ int setschwierigkeitsgrad(str_player* player) {
 }
 
 // Spielfeldgroesse festlegen
-void setmapgrosse() {
-	int grosse = getmapgrosse() + 1;
+int setmapgrosse() {
+	int grosse = getmapgrosse();
 
-	CONSOLE_HEIGHT = grosse * CONSOLE_HEIGHT;
-	CONSOLE_WIDTH = grosse * CONSOLE_WIDTH;
+	switch (grosse) {
+	case 0:
+		//auf standard lassen
+		break;
+	case 1:
+		CONSOLE_HEIGHT = 1.5 * CONSOLE_HEIGHT;	//=150
+		CONSOLE_WIDTH = 1.5 * CONSOLE_WIDTH;	//=45
+		break;
+	case 2:
+		CONSOLE_HEIGHT = 2 * CONSOLE_HEIGHT;	//=200
+		CONSOLE_WIDTH = 2 * CONSOLE_WIDTH;		//=60
+		break;
+	}
 
 	setWindowSize(CONSOLE_WIDTH, CONSOLE_HEIGHT);
+
+	return grosse;
 }
+
 
 // Game Over screen
 void spielende() {
+	//vgl. startscreen
 	clrscr();
 
-	gotoxy(CONSOLE_WIDTH / 2, CONSOLE_HEIGHT / 2);
-	print("Gameover\n");
-
+	//Reset Konsole
 	CONSOLE_HEIGHT = 30;
 	CONSOLE_WIDTH = 100;
 
 	setWindowSize(CONSOLE_WIDTH, CONSOLE_HEIGHT);
 
-	sysPause();
+	//Ascii Art: http://patorjk.com/software/taag/#p=display&f=Big&t=Game%20Over
+
+	gotoxy((CONSOLE_WIDTH / 2) - 27, (CONSOLE_HEIGHT / 2) - 4);
+															
+	print("   _____                         ____                 \n");
+
+	gotoxy((CONSOLE_WIDTH / 2) - 27, (CONSOLE_HEIGHT / 2) - 3);
+	print("  / ____|                       / __ \\                \n");
+
+	gotoxy((CONSOLE_WIDTH / 2) - 27, (CONSOLE_HEIGHT / 2) - 2);
+	print(" | |  __  __ _ _ __ ___   ___  | |  | |_   _____ _ __ \n");
+
+	gotoxy((CONSOLE_WIDTH / 2) - 27, (CONSOLE_HEIGHT / 2) - 1);
+	print(" | | |_ |/ _` | '_ ` _ \\ / _ \\ | |  | \\ \\ / / _ \\ '__|\n");
+
+	gotoxy((CONSOLE_WIDTH / 2) - 27, (CONSOLE_HEIGHT / 2));
+	print(" | |__| | (_| | | | | | |  __/ | |__| |\\ V /  __/ |  \n");
+
+	gotoxy((CONSOLE_WIDTH / 2) - 27, (CONSOLE_HEIGHT / 2) + 1);
+	print("  \\_____|\\__,_|_| |_| |_|\\___|  \\____/  \\_/ \\___|_|  \n");
+
+	gotoxy((CONSOLE_WIDTH / 2) - 13, (CONSOLE_HEIGHT / 2) + 2);
+
+	sysPause();	//warte auf user input
 }
 
 void printHighscore() {
