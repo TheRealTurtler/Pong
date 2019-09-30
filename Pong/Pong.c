@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <time.h>
+#include <string.h>
 
 #if defined(_WIN32)
 // Windows Libraries
@@ -136,6 +137,11 @@ typedef struct {
 	int prev_pos;
 }str_player;
 
+typedef struct {
+	int score;
+	char name[21];
+}str_highscore;
+
 // ============================================= FUNKTIONEN DEKLARATIONEN ================================================== //
 
 void updatePlayer(str_player* player);
@@ -167,7 +173,11 @@ void hideCursor();
 void gotoxy(int x, int y);
 void sysPause();
 int exitgame();
-
+void printHighscore();
+void addHighscore(int score);
+int checkHighscore(int score);
+int compareScore(const void* a, const void* b);
+void sortHighscore(str_highscore* highscore);
 // ============================================= MAIN ====================================================================== //
 
 int main() {
@@ -203,6 +213,7 @@ int main() {
 			loadGame();
 			break;
 		case 1:	// Highscore
+			printHighscore();
 			// TODO >> Highscore
 			break;
 		case 2:	// Exit
@@ -666,7 +677,7 @@ void updateBall(str_ball* ball) {
 
 	// Ball bewegen
 	switch (ball->dest) {
-	// oben rechts
+		// oben rechts
 	case 0:
 		ball->x += 1;
 		ball->y -= 2;
@@ -679,7 +690,7 @@ void updateBall(str_ball* ball) {
 		ball->x += 2;
 		ball->y -= 1;
 		break;
-	// unten rechts
+		// unten rechts
 	case 3:
 		ball->x += 2;
 		ball->y += 1;
@@ -692,7 +703,7 @@ void updateBall(str_ball* ball) {
 		ball->x += 1;
 		ball->y += 2;
 		break;
-	// unten links
+		// unten links
 	case 6:
 		ball->x -= 1;
 		ball->y += 2;
@@ -705,7 +716,7 @@ void updateBall(str_ball* ball) {
 		ball->x -= 2;
 		ball->y += 1;
 		break;
-	// oben links
+		// oben links
 	case 9:
 		ball->x -= 2;
 		ball->y -= 1;
@@ -944,7 +955,7 @@ void moveBall(str_ball* ball, str_player* player) {
 // Neue Spielerposition zeichnen und alte loeschen
 void printUpdatedPlayer(str_player* player, int id) {
 	switch (id) {
-	// Spieler 1
+		// Spieler 1
 	case 0:
 		// Spieler hat sich nach rechts bewegt
 		if (player[id].pos > player[id].prev_pos) {
@@ -969,7 +980,7 @@ void printUpdatedPlayer(str_player* player, int id) {
 		}
 		break;
 
-	// Spieler 2
+		// Spieler 2
 	case 1:
 		// Spieler hat sich nach rechts bewegt
 		if (player[id].pos > player[id].prev_pos) {
@@ -1066,24 +1077,30 @@ void loadGame() {
 		vergangeneZeit = ((secs) * 1000 + usecs / 1000.0) + 0.5;
 #endif
 
-		if ((vergangeneZeit - zeit - 1000) > 0) { // Geschwindigkeit Ball
+		if ((vergangeneZeit - zeit - 200) > 0) { // Geschwindigkeit Ball
 			updateBall(&ball);
 			collisionWall(&ball);
 
 			switch (collisionPlayer(&ball, player)) {
-			// Game Over
+				// Game Over
 			case -1:
+				if (score1 >= score2 && checkHighscore(score1) == 1) {
+					addHighscore(score1);
+				}
+				else if (score2 > score1 && checkHighscore(score2) == 1) {
+					addHighscore(score2);
+				}
 				spielende();
 				gameover = 1;
 				break;
-			// Nichts, Ball nicht in Spielernaehe
+				// Nichts, Ball nicht in Spielernaehe
 			case 0:
 				break;
-			// Punkt fuer Spieler 1
+				// Punkt fuer Spieler 1
 			case 1:
 				score1++;
 				break;
-			// Punkt fuer Spieler 2
+				// Punkt fuer Spieler 2
 			case 2:
 				score2++;
 				break;
@@ -1317,4 +1334,118 @@ void spielende() {
 	setWindowSize(CONSOLE_WIDTH, CONSOLE_HEIGHT);
 
 	sysPause();
+}
+
+void printHighscore() {
+
+	clrscr();
+
+	FILE* datei = fopen("Highscore.txt", "r");
+	char text[25];
+
+	int x = 10, y = 5;
+
+	clrscr();
+
+	gotoxy(x - 3, y - 1);
+	print("Highscore");
+
+	fgets(text, 25, datei);
+
+	while (!feof(datei)) {
+		gotoxy(x, y++);
+		print("%s", text);
+
+		fgets(text, 25, datei);
+	}
+
+	print("\n\n");
+
+	sysPause();
+
+	fclose(datei);
+}
+
+void addHighscore(int score) {
+	FILE* datei = fopen("Highscore.txt", "r+");
+	str_highscore highscore[11] = { 0 };
+	int a;
+
+	clrscr();
+
+	gotoxy(7, 4);
+	print("Bitte Namen eingeben (max 20 Zeichen, kein Leerzeichen):");
+	//gotoxy(7, 5);
+	scanf(" %20s", highscore[10].name);
+	highscore[10].name[strlen(highscore[10].name)] = '\n';
+	highscore[10].score = score;
+
+	for (int i = 0; i < 10; i++) {
+		fscanf(datei, "%d", &highscore[i].score);
+		a = 0;
+
+		fscanf(datei, "%c", &highscore[i].name[a]);
+		while (highscore[i].name[a] == ' ') {
+			fscanf(datei, "%c", &highscore[i].name[a]);
+		}
+
+		while (highscore[i].name[a] != '\n' && !feof(datei)) {
+			a++;
+			fscanf(datei, "%c", &highscore[i].name[a]);
+		}
+	}
+
+	sortHighscore(highscore);
+
+	fseek(datei, 0, SEEK_SET);
+
+	for (int i = 0; i < 10; i++) {
+		fprintf(datei, "%d %s", highscore[i].score, highscore[i].name);
+	}
+
+	fclose(datei);
+}
+
+int checkHighscore(int score) {
+	FILE* datei = fopen("Highscore.txt", "r");
+	int lowestScore = 1000;
+	int zahl[10];
+	int i = 0;
+	char buffer;
+
+	while (!feof(datei)) {
+		fscanf(datei, "%d", &zahl[i]);
+		buffer = 0;
+
+		while (buffer != '\n' && !feof(datei)) {
+			fscanf(datei, "%c", &buffer);
+		}
+
+		if (lowestScore > zahl[i]) {
+			lowestScore = zahl[i];
+		}
+
+		i++;
+	}
+
+	fclose(datei);
+
+	if (score > lowestScore) {
+		return 1;
+	}
+
+	return 0;
+}
+
+void sortHighscore(str_highscore* highscore) {
+	qsort(highscore, 11, sizeof(*highscore), compareScore);
+}
+
+int compareScore(const void* a, const void* b) {
+	str_highscore player1 = *(str_highscore*)a;
+	str_highscore player2 = *(str_highscore*)b;
+
+	if (player1.score < player2.score) return 1;
+	if (player1.score > player2.score) return -1;
+	return 0;
 }

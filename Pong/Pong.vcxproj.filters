@@ -19,4 +19,9 @@
       <Filter>Quelldateien</Filter>
     </ClCompile>
   </ItemGroup>
+  <ItemGroup>
+    <Text Include="Highscore.txt">
+      <Filter>Quelldateien</Filter>
+    </Text>
+  </ItemGroup>
 </Project>
