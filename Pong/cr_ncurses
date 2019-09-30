@@ -63,7 +63,7 @@ fi
 if [ -f $1 ]
 	then
 		INFILE=$1
-		OUTFILE="${INFILE%%.*}"
+		OUTFILE="${INFILE%%.*}.out"
 		
 		rm -f $OUTFILE
 		
