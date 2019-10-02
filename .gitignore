@@ -340,4 +340,4 @@ ASALocalRun/
 healthchecksdb
 
 # Linux gcc output
-.out
+*.out
