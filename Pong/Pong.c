@@ -1,3 +1,12 @@
+/*	Code von Michael Diedler (Nr.) und Kai Frisch (Nr. 2033963)
+	Anfaenge wurdn aus dem Snace-code übernommen, sind aber stark abgeaendert worden
+	Sonstige Quellen sind im Code vermerkt
+	Bitte lesen sie unser Read_me um die Logic hinter dem Spiel besser zu begreifen,
+	sowie Informationen zu verwendete Linux oder Windows spezifische Sonderheiten zu erhalten
+*/
+
+// ============================================= Header ============================================================== //
+
 // Fehlermeldungen in Visual Studio ignorieren
 #if defined(_WIN32)
 #define _CRT_SECURE_NO_WARNINGS 1
@@ -742,7 +751,7 @@ void collisionWall(str_ball* ball) {
 // Kollision mit Spieler abfragen
 int collisionPlayer(str_ball* ball, str_player* player) {
 	// Ball am oberen Rand
-	if (ball->y <= HEADER_HEIGHT) {
+	if (ball->y <= HEADER_HEIGHT && ball->prev_y > HEADER_HEIGHT) {	//	zweiters vermeidet, dass Kollision zu oft abgefragt wird
 		// Kollision mit Spieler 1
 
 		// Erstes Segment (von links)
@@ -823,7 +832,7 @@ int collisionPlayer(str_ball* ball, str_player* player) {
 	}
 
 	// Ball am unteren Rand
-	else if (ball->y >= CONSOLE_HEIGHT) {
+	else if (ball->y >= CONSOLE_HEIGHT && ball->prev_y < CONSOLE_HEIGHT) {
 		// Kollision mit Spieler 2
 
 		// Erstes Segment (von links)
@@ -944,7 +953,7 @@ void moveBall(str_ball* ball, str_player* player) {
 	}
 }
 
-// system(pause);
+// system(pause);	//	jetzt überflüssig
 /*char getkwaitForAnyKey() {
 	while (!kbhit()) {
 		// TODO >> evtl noch interrupt einfuegen
@@ -1043,7 +1052,6 @@ void loadGame() {
 	// Spielerposition
 	player[0].pos = (CONSOLE_WIDTH - player[0].length) / 2;
 	player[1].pos = (CONSOLE_WIDTH - player[1].length) / 2;
-	// TODO >> player.length gerade/ ungerade (Spielfeldbreite ungerade -> Ball in der Mitte, aber Spieler nicht)
 
 	// Ballposition
 		// Debug
@@ -1112,7 +1120,7 @@ void loadGame() {
 			// Zeit reset
 #if defined(_WIN32)
 			zeit = clock();
-#else // https://stackoverflow.com/a/9871230 (Vergangene Zeit seit Prozessstart im Millisekunden
+#else // https://stackoverflow.com/a/9871230 (Vergangene Zeit seit Prozessstart im Millisekunden)
 			gettimeofday(&end, NULL);
 			secs = end.tv_sec - start.tv_sec;
 			usecs = end.tv_usec - start.tv_usec;
@@ -1142,7 +1150,7 @@ int mainMenu() {
 	print("Exit\n");
 	gotoxy(x, y++);
 
-	selected = menuSelector(x, y, yStart);	//Im Men� navigieren
+	selected = menuSelector(x, y, yStart);	//Im Menue navigieren
 
 	return selected;
 }
@@ -1293,7 +1301,7 @@ int setschwierigkeitsgrad(str_player* player, int grosse) {
 
 	int difficulty = getschwierigkeitsgrad() ;	
 
-	//Spieler l�nge muss durch 5 teilbar sein, da wir ihn in der Kollision in 5 Bereiche aufteilen
+	//Spieler laenge muss durch 5 teilbar sein, da wir ihn in der Kollision in 5 Bereiche aufteilen
 	switch (difficulty) {
 	case 0:
 		player[0].length = (CONSOLE_WIDTH / 5);	//Schwiereigkeitsgrad nicht von Spielgr��e abh�ngig
@@ -1305,7 +1313,7 @@ int setschwierigkeitsgrad(str_player* player, int grosse) {
 		break;
 	case 2:
 		if (grosse==1) {
-			player[0].length = (CONSOLE_WIDTH / 15);	//Hier w�re sonst Spieler L�nge 150/20 = 7.5!!!!!!!!!
+			player[0].length = (CONSOLE_WIDTH / 15);	//Hier waere sonst Spieler Laenge 150/20 = 7.5!!!!!!!!!
 			player[1].length = (CONSOLE_WIDTH / 15);
 		}
 		else {
@@ -1376,31 +1384,33 @@ void spielende() {
 
 	gotoxy((CONSOLE_WIDTH / 2) - 13, (CONSOLE_HEIGHT / 2) + 2);
 
-	sysPause();	//warte auf user input
+	sysPause();	//	warte auf user input
 }
 
 void printHighscore() {
 
 	clrscr();
 
-	FILE* datei = fopen("Highscore.txt", "r");
+	FILE* datei = fopen("Highscore.txt", "r");	//	Datei in der alle aktuellen Highscores gespeichert sind
 	char text[25];
 
 	int x = 10, y = 5;
 
 	clrscr();
 
+	//	Ueberschrift
 	gotoxy(x - 3, y - 1);
 	print("Highscore");
 
+	//	hol die erste Zeile aus der Datei
 	fgets(text, 25, datei);
 
 	while (!feof(datei)) {
 		gotoxy(x, y++);
-		print("%s", text);
+		print("%s", text);		//	schreibe die erste Zeile, dann zweite usw.
 
-		fgets(text, 25, datei);
-	}
+		fgets(text, 25, datei);	//	hole naechste Zeile
+	}	//	vermeidet Fehler in den wir in Datei elf Zeilen haben aber nur zehn schreiben wollen
 
 	print("\n\n");
 
@@ -1416,6 +1426,7 @@ void addHighscore(int score) {
 
 	clrscr();
 
+	//	Neuer Highscore: Usereingabe
 	gotoxy(7, 4);
 	print("Bitte Namen eingeben (max 20 Zeichen, kein Leerzeichen):");
 	//gotoxy(7, 5);
@@ -1423,23 +1434,27 @@ void addHighscore(int score) {
 	highscore[10].name[strlen(highscore[10].name)] = '\n';
 	highscore[10].score = score;
 
+	// lade die gespeicherten Highscores
 	for (int i = 0; i < 10; i++) {
-		fscanf(datei, "%d", &highscore[i].score);
+		fscanf(datei, "%d", &highscore[i].score);	// holt Score aus Datei (hoert bei ' ' auf)
 		a = 0;
 
+		//	holt Leerzeichen
 		fscanf(datei, "%c", &highscore[i].name[a]);
 		while (highscore[i].name[a] == ' ') {
 			fscanf(datei, "%c", &highscore[i].name[a]);
 		}
 
+		//	Scanned den Namen ein
 		while (highscore[i].name[a] != '\n' && !feof(datei)) {
 			a++;
 			fscanf(datei, "%c", &highscore[i].name[a]);
 		}
 	}
 
-	sortHighscore(highscore);
+	sortHighscore(highscore);	//	Sortiere das Struct array (qsort)
 
+	// Schreibe neue Highscores in Datei
 	fseek(datei, 0, SEEK_SET);
 
 	for (int i = 0; i < 10; i++) {
@@ -1450,12 +1465,14 @@ void addHighscore(int score) {
 }
 
 int checkHighscore(int score) {
+	// Schaue nach ob der erreichte Score ueberhaupt ein Highscoe ist, d.h. in Highscore angezeigt werden soll
 	FILE* datei = fopen("Highscore.txt", "r");
 	int lowestScore = 1000;
 	int zahl[10];
 	int i = 0;
 	char buffer;
 
+	// Suche den kleinsten Score
 	while (!feof(datei)) {
 		fscanf(datei, "%d", &zahl[i]);
 		buffer = 0;
@@ -1473,18 +1490,19 @@ int checkHighscore(int score) {
 
 	fclose(datei);
 
+	// ist erreichter Score groesser als der niedrigste in der Liste
 	if (score > lowestScore) {
-		return 1;
+		return 1;	// Ja
 	}
 
-	return 0;
+	return 0;	//	Nein
 }
 
 void sortHighscore(str_highscore* highscore) {
-	qsort(highscore, 11, sizeof(*highscore), compareScore);
+	qsort(highscore, 11, sizeof(*highscore), compareScore);	
 }
 
-int compareScore(const void* a, const void* b) {
+int compareScore(const void* a, const void* b) { //	Funktion fuer qsort: sortiere nach hoechsten Score
 	str_highscore player1 = *(str_highscore*)a;
 	str_highscore player2 = *(str_highscore*)b;
 
