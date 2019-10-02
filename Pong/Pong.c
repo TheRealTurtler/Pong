@@ -1,8 +1,8 @@
-/*	Code von Michael Diedler (Nr.) und Kai Frisch (Nr. 2033963)
-	Anfaenge wurdn aus dem Snace-code übernommen, sind aber stark abgeaendert worden
+/*	Code von Michael Diedler (Matr. Nr. 2020406) und Kai Frisch (Matr. Nr. 2033963)
+	Anfaenge wurden aus dem Snake-Code uebernommen, sind aber stark abgeaendert worden
 	Sonstige Quellen sind im Code vermerkt
-	Bitte lesen sie unser Read_me um die Logic hinter dem Spiel besser zu begreifen,
-	sowie Informationen zu verwendete Linux oder Windows spezifische Sonderheiten zu erhalten
+	Bitte lesen Sie unser Readme, um die Logik hinter dem Spiel besser zu verstehen,
+	sowie Informationen zu verwendeten Linux- oder Windows-spezifischen Sonderheiten zu erhalten
 */
 
 // ============================================= Header ============================================================== //
@@ -12,7 +12,6 @@
 #define _CRT_SECURE_NO_WARNINGS 1
 #define _CRT_NONSTDC_NO_WARNINGS 1
 #endif
-
 
 #include <stdio.h>
 #include <math.h>
@@ -64,68 +63,14 @@ const char BLANK = ' ';
 const char BALL = 'O';
 const char PLAYER_TOP = '=';
 const char PLAYER_BOT = '=';
-
-/*
-//Linux Functions - These functions emulate some functions from the windows only conio header file
-//Code: http://ubuntuforums.org/showthread.php?t=549023
-void gotoxy(int x, int y)
-{
-	print("%c[%d;%df", 0x1B, y, x);
-}
-*/
-
-/*
-//http://cboard.cprogramming.com/c-programming/63166-kbhit-linux.html
-int kbhit(void)
-{
-	struct termios oldt, newt;
-	int ch;
-	int oldf;
-
-	tcgetattr(STDIN_FILENO, &oldt);
-	newt = oldt;
-	newt.c_lflag &= ~(ICANON | ECHO);
-	tcsetattr(STDIN_FILENO, TCSANOW, &newt);
-	oldf = fcntl(STDIN_FILENO, F_GETFL, 0);
-	fcntl(STDIN_FILENO, F_SETFL, oldf | O_NONBLOCK);
-
-	ch = getchar();
-
-	tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
-	fcntl(STDIN_FILENO, F_SETFL, oldf);
-
-	if (ch != EOF)
-	{
-		ungetc(ch, stdin);
-		return 1;
-	}
-
-	return 0;
-}
-*/
-
-/*
-//http://www.experts-exchange.com/Programming/Languages/C/Q_10119844.html - posted by jos
-char getch()
-{
-	char c;
-	system("stty raw");
-	c = getchar();
-	system("stty sane");
-	//print("%c",c);
-	return(c);
-}
-*/
-
-//End linux Functions
 #endif
 
-//This should be the same on both operating systems
-#define EXIT_BUTTON 27 //ESC
+// Gleich in Windows und Linux
+#define EXIT_BUTTON 27 // ESC	TODO
 
-// Konsolengroesse (am besten ungerade, damit Ball in der Mitte starten kann)
+// Konsolengroesse (am besten gerade, damit Ball in der Mitte starten kann)
 int CONSOLE_WIDTH = 100;
-int CONSOLE_HEIGHT = 30; // Spielfeld + Header
+int CONSOLE_HEIGHT = 32; // Spielfeld + Header
 
 // Anzahl an Zeilen ueber dem Spielfeld
 int HEADER_HEIGHT = 2;
@@ -223,7 +168,6 @@ int main() {
 			break;
 		case 1:	// Highscore
 			printHighscore();
-			// TODO >> Highscore
 			break;
 		case 2:	// Exit
 			exit = exitYN();
@@ -296,7 +240,7 @@ void hideCursor() {
 // Tastendruck abfragen
 int* checkKeysPressed() {
 	int pressed[4];
-	// If a key has been pressed
+	// Wenn eine Taste gedrueckt wurde
 	if (kbhit()) {
 
 		// links, rechts
@@ -751,7 +695,7 @@ void collisionWall(str_ball* ball) {
 // Kollision mit Spieler abfragen
 int collisionPlayer(str_ball* ball, str_player* player) {
 	// Ball am oberen Rand
-	if (ball->y <= HEADER_HEIGHT && ball->prev_y > HEADER_HEIGHT) {	//	zweiters vermeidet, dass Kollision zu oft abgefragt wird
+	if (ball->y <= HEADER_HEIGHT && ball->prev_y > HEADER_HEIGHT) {	// zweites vermeidet, dass Kollision zu oft abgefragt wird
 		// Kollision mit Spieler 1
 
 		// Erstes Segment (von links)
@@ -832,7 +776,7 @@ int collisionPlayer(str_ball* ball, str_player* player) {
 	}
 
 	// Ball am unteren Rand
-	else if (ball->y >= CONSOLE_HEIGHT && ball->prev_y < CONSOLE_HEIGHT) {
+	else if (ball->y >= CONSOLE_HEIGHT && ball->prev_y < CONSOLE_HEIGHT) {	// zweites vermeidet, dass Kollision zu oft abgefragt wird
 		// Kollision mit Spieler 2
 
 		// Erstes Segment (von links)
@@ -953,7 +897,7 @@ void moveBall(str_ball* ball, str_player* player) {
 	}
 }
 
-// system(pause);	//	jetzt überflüssig
+// system(pause);
 /*char getkwaitForAnyKey() {
 	while (!kbhit()) {
 		// TODO >> evtl noch interrupt einfuegen
@@ -1034,6 +978,7 @@ void loadGame() {
 	int score1 = 0;
 	int score2 = 0;
 	int gameover = 0;
+	int speed = 1000;
 
 	// Linux -- Startzeit festlegen
 #if !defined(_WIN32)
@@ -1052,15 +997,14 @@ void loadGame() {
 	// Spielerposition
 	player[0].pos = (CONSOLE_WIDTH - player[0].length) / 2;
 	player[1].pos = (CONSOLE_WIDTH - player[1].length) / 2;
+	// TODO >> player.length gerade/ ungerade (Spielfeldbreite ungerade -> Ball in der Mitte, aber Spieler nicht)
 
-	// Ballposition
+	// Ballposition TODO
 		// Debug
 	ball.x = 50;
 	ball.y = 10;
 	ball.dest = 0;
-	// ball.prev_x = ball.x;
-	// ball.prev_y = ball.y;
-
+	
 		// Release
 	// ball.x = 1 + (CONSOLE_WIDTH - 2) / 2;
 	// ball.y = HEADER_HEIGHT + (CONSOLE_HEIGHT - HEADER_HEIGHT) / 2;
@@ -1078,14 +1022,14 @@ void loadGame() {
 		// Vergangene Zeit seit Prozessstart
 #if defined(_WIN32)
 		vergangeneZeit = clock();
-#else // https://stackoverflow.com/a/9871230 (Vergangene Zeit seit Prozessstart im Millisekunden
+#else // https://stackoverflow.com/a/9871230 (Vergangene Zeit seit Prozessstart in Millisekunden)
 		gettimeofday(&end, NULL);
 		secs = end.tv_sec - start.tv_sec;
 		usecs = end.tv_usec - start.tv_usec;
 		vergangeneZeit = ((secs) * 1000 + usecs / 1000.0) + 0.5;
 #endif
 
-		if ((vergangeneZeit - zeit - 1000) > 0) { // Geschwindigkeit Ball
+		if ((vergangeneZeit - zeit - speed) > 0) { // Geschwindigkeit Ball
 			updateBall(&ball);
 			collisionWall(&ball);
 
@@ -1120,7 +1064,7 @@ void loadGame() {
 			// Zeit reset
 #if defined(_WIN32)
 			zeit = clock();
-#else // https://stackoverflow.com/a/9871230 (Vergangene Zeit seit Prozessstart im Millisekunden)
+#else // https://stackoverflow.com/a/9871230 (Vergangene Zeit seit Prozessstart in Millisekunden)
 			gettimeofday(&end, NULL);
 			secs = end.tv_sec - start.tv_sec;
 			usecs = end.tv_usec - start.tv_usec;
@@ -1135,13 +1079,16 @@ void loadGame() {
 // Hauptmenue
 int mainMenu() {
 
-	int x = 10, y = 5;	//Startpunkt
+	// Startpunkt
+	int x = 10, y = 5;
 	int yStart = y;
 
 	int selected;
 
-	clrscr(); //clear the console
+	// Konsole leeren
+	clrscr();
 
+	// Menue Text
 	gotoxy(x, y++);
 	print("New Game\n");
 	gotoxy(x, y++);
@@ -1150,7 +1097,8 @@ int mainMenu() {
 	print("Exit\n");
 	gotoxy(x, y++);
 
-	selected = menuSelector(x, y, yStart);	//Im Menue navigieren
+	//Im Menue navigieren
+	selected = menuSelector(x, y, yStart);
 
 	return selected;
 }
@@ -1180,13 +1128,12 @@ int mainMenu() {
 
 // Startbildschirm
 void startscreen() {
-	//	ASCII Art Quelle: http://pong.ascii.uk/
+	// ASCII Art Quelle: http://pong.ascii.uk/
 	// Note: "\\" schreibt nur einmal "\"
 
 	clrscr();
 
-	gotoxy((CONSOLE_WIDTH / 2) - 13, (CONSOLE_HEIGHT / 2) - 4); //	Mein Versuch das ganze irgendwie mittig zu machen...
-															//	Alternative: vgl. oben
+	gotoxy((CONSOLE_WIDTH / 2) - 13, (CONSOLE_HEIGHT / 2) - 4); // Mein Versuch das ganze irgendwie mittig zu machen...
 	print(" _ __   ___  _ __   __ _ \n");
 
 	gotoxy((CONSOLE_WIDTH / 2) - 13, (CONSOLE_HEIGHT / 2) - 3);
@@ -1206,18 +1153,22 @@ void startscreen() {
 
 	gotoxy((CONSOLE_WIDTH / 2) - 13, (CONSOLE_HEIGHT / 2) + 2);
 
-	sysPause(); //warte auf user input
+	// Warte auf Benutzereingabe
+	sysPause();
 }
 
 // Spiel beenden
 int exitgame() {
-	//Gleiche Strucktur wie im Hauptmenu
+	// Gleiche Strucktur wie im Hauptmenu
 	int x = 10, y = 5;
 	int yStart = y;
 
 	int selected;
 
-	clrscr(); //clear the console
+	// Konsole leeren
+	clrscr();
+
+	// Menue Text
 	gotoxy(x - 3, y - 1);
 	print("Willst du das Spiel wirklich beenden?");
 	gotoxy(x, y++);
@@ -1225,9 +1176,8 @@ int exitgame() {
 	gotoxy(x, y++);
 	print("Nein\n");
 	gotoxy(x, y++);
-
-
-	selected = menuSelector(x, y, yStart);	
+	
+	selected = menuSelector(x, y, yStart);
 
 	return selected;
 }
@@ -1239,9 +1189,10 @@ int exitYN() {
 
 	int ende = exitgame();
 
-	if (ende == 0)
-	{
-		clrscr(); //clear the console
+	if (ende == 0) {
+		// Konsole leeren
+		clrscr();
+
 		return 1;
 	}
 
@@ -1250,13 +1201,16 @@ int exitYN() {
 
 // Schwierigkeitsgrad auswaehlen
 int getschwierigkeitsgrad() {
-	//vgl. MainMenu
+	// vgl. MainMenu
 	int x = 10, y = 5;
 	int yStart = y;
 
 	int selected;
 
-	clrscr(); //clear the console
+	// Konsole leeren
+	clrscr();
+
+	// Menue Text
 	gotoxy(x - 3, y - 1);
 	print("Waehle deinen Schwierigkeitsgrad");
 	gotoxy(x, y++);
@@ -1267,20 +1221,23 @@ int getschwierigkeitsgrad() {
 	print("schwer\n");
 	gotoxy(x, y++);
 
-	selected = menuSelector(x, y, yStart);	
+	selected = menuSelector(x, y, yStart);
 
 	return selected;
 }
 
 // Spielfeldgroesse auswaehlen
 int getmapgrosse() {
-	//vgl. MainMenu
+	// vgl. MainMenu
 	int x = 10, y = 5;
 	int yStart = y;
 
 	int selected;
 
-	clrscr(); //clear the console
+	// Konsole leeren
+	clrscr();
+
+	// Menue Text
 	gotoxy(x - 3, y - 1);
 	print("Waehle deine Map groesse");
 	gotoxy(x, y++);
@@ -1291,34 +1248,34 @@ int getmapgrosse() {
 	print("gross\n");
 	gotoxy(x, y++);
 
-	selected = menuSelector(x, y, yStart);	
+	selected = menuSelector(x, y, yStart);
 
 	return selected;
 }
 
 // Schwierigkeitsgrad festlegen
 int setschwierigkeitsgrad(str_player* player, int grosse) {
+	// Benutzer waehlt Schwierigkeit
+	int difficulty = getschwierigkeitsgrad();
 
-	int difficulty = getschwierigkeitsgrad() ;	
-
-	//Spieler laenge muss durch 5 teilbar sein, da wir ihn in der Kollision in 5 Bereiche aufteilen
+	// Spielerlaenge muss durch 5 teilbar sein, da wir diese in der Kollision in 5 Bereiche aufteilen
 	switch (difficulty) {
 	case 0:
-		player[0].length = (CONSOLE_WIDTH / 5);	//Schwiereigkeitsgrad nicht von Spielgr��e abh�ngig
-		player[1].length = (CONSOLE_WIDTH / 5);
+		player[0].length = (CONSOLE_WIDTH - 1) / 5;	// Schwiereigkeitsgrad nicht von Spielgroesse abhaengig
+		player[1].length = (CONSOLE_WIDTH - 1) / 5;
 		break;
 	case 1:
-		player[0].length = (CONSOLE_WIDTH / 10);
-		player[1].length = (CONSOLE_WIDTH / 10);
+		player[0].length = (CONSOLE_WIDTH - 1) / 10;
+		player[1].length = (CONSOLE_WIDTH - 1) / 10;
 		break;
 	case 2:
-		if (grosse==1) {
-			player[0].length = (CONSOLE_WIDTH / 15);	//Hier waere sonst Spieler Laenge 150/20 = 7.5!!!!!!!!!
-			player[1].length = (CONSOLE_WIDTH / 15);
+		if (grosse == 1) {
+			player[0].length = (CONSOLE_WIDTH - 1) / 15;	//Hier waere sonst Spieler Laenge 150/20 = 7.5!!!!!!!!!
+			player[1].length = (CONSOLE_WIDTH - 1) / 15;
 		}
 		else {
-			player[0].length = (CONSOLE_WIDTH / 20);
-			player[1].length = (CONSOLE_WIDTH / 20);
+			player[0].length = (CONSOLE_WIDTH - 1) / 20;
+			player[1].length = (CONSOLE_WIDTH - 1) / 20;
 		}
 		break;
 	}
@@ -1328,22 +1285,26 @@ int setschwierigkeitsgrad(str_player* player, int grosse) {
 
 // Spielfeldgroesse festlegen
 int setmapgrosse() {
+	// Benutzer waehlt Groesse
 	int grosse = getmapgrosse();
 
 	switch (grosse) {
 	case 0:
-		//auf standard lassen
+		// Standartwerte
+		// CONSOLE_HEIGHT = 32;
+		// CONSOLE_WIDTH = 100;
 		break;
 	case 1:
-		CONSOLE_HEIGHT = 1.5 * CONSOLE_HEIGHT;	//=150
-		CONSOLE_WIDTH = 1.5 * CONSOLE_WIDTH;	//=45
+		CONSOLE_HEIGHT = 48;
+		CONSOLE_WIDTH = 150;
 		break;
 	case 2:
-		CONSOLE_HEIGHT = 2 * CONSOLE_HEIGHT;	//=200
-		CONSOLE_WIDTH = 2 * CONSOLE_WIDTH;		//=60
+		CONSOLE_HEIGHT = 62;
+		CONSOLE_WIDTH = 200;
 		break;
 	}
 
+	// Konsolengroesse aendern
 	setWindowSize(CONSOLE_WIDTH, CONSOLE_HEIGHT);
 
 	return grosse;
@@ -1352,10 +1313,12 @@ int setmapgrosse() {
 
 // Game Over screen
 void spielende() {
-	//vgl. startscreen
+	// vgl. Startscreen
+
+	// Konsole leeren
 	clrscr();
 
-	//Reset Konsole
+	// Konsolengroesse zuruecksetzen
 	CONSOLE_HEIGHT = 30;
 	CONSOLE_WIDTH = 100;
 
@@ -1364,7 +1327,6 @@ void spielende() {
 	//Ascii Art: http://patorjk.com/software/taag/#p=display&f=Big&t=Game%20Over
 
 	gotoxy((CONSOLE_WIDTH / 2) - 27, (CONSOLE_HEIGHT / 2) - 4);
-															
 	print("   _____                         ____                 \n");
 
 	gotoxy((CONSOLE_WIDTH / 2) - 27, (CONSOLE_HEIGHT / 2) - 3);
@@ -1384,95 +1346,136 @@ void spielende() {
 
 	gotoxy((CONSOLE_WIDTH / 2) - 13, (CONSOLE_HEIGHT / 2) + 2);
 
-	sysPause();	//	warte auf user input
+	// Warte auf Benutzereingabe
+	sysPause();
 }
 
+// Highscoreliste ausgeben
 void printHighscore() {
+	// Oeffne Datei mit Leserechten
+	FILE* datei = fopen("Highscore.txt", "r");
 
-	clrscr();
-
-	FILE* datei = fopen("Highscore.txt", "r");	//	Datei in der alle aktuellen Highscores gespeichert sind
 	char text[25];
-
 	int x = 10, y = 5;
 
+	// Konsole leeren
 	clrscr();
 
-	//	Ueberschrift
+	// Pruefe, ob datei geoeffnet werden konnte
+	if (!datei) {
+		gotoxy(0, 0);
+		print("Datei kann nicht geoeffnet werden!\n");
+		sysPause();
+		return;
+	}
+
+	// Ueberschrift
 	gotoxy(x - 3, y - 1);
 	print("Highscore");
 
-	//	hol die erste Zeile aus der Datei
+	// erste Zeile aus der Datei
 	fgets(text, 25, datei);
 
+	// Rest der Datei
 	while (!feof(datei)) {
+		// schreibe die erste Zeile, dann zweite usw.
 		gotoxy(x, y++);
-		print("%s", text);		//	schreibe die erste Zeile, dann zweite usw.
+		print("%s", text);
 
-		fgets(text, 25, datei);	//	hole naechste Zeile
-	}	//	vermeidet Fehler in den wir in Datei elf Zeilen haben aber nur zehn schreiben wollen
+		// naechste Zeile
+		fgets(text, 25, datei);
+	}	//	vermeidet Fehler, da sich in der Datei elf Zeilen befinden, aber nur zehn mit Text befuellt sind
 
 	print("\n\n");
 
+	// Warte auf Benutzereingabe
 	sysPause();
 
+	// Datei schliessen
 	fclose(datei);
 }
 
+// Neuen Highscore hinzufuegen
 void addHighscore(int score) {
+	// Oeffne Datei mit Lese- und Schreibrechten
 	FILE* datei = fopen("Highscore.txt", "r+");
+
 	str_highscore highscore[11] = { 0 };
 	int a;
 
+	// Konsole leeren
 	clrscr();
 
-	//	Neuer Highscore: Usereingabe
+	// Pruefe, ob datei geoeffnet werden konnte
+	if (!datei) {
+		gotoxy(0, 0);
+		print("Datei kann nicht geoeffnet werden!\n");
+		sysPause();
+		return;
+	}
+
+	// Neuer Highscore: Benutzereingabe
 	gotoxy(7, 4);
 	print("Bitte Namen eingeben (max 20 Zeichen, kein Leerzeichen):");
 	//gotoxy(7, 5);
 	scanf(" %20s", highscore[10].name);
+
 	highscore[10].name[strlen(highscore[10].name)] = '\n';
 	highscore[10].score = score;
 
 	// lade die gespeicherten Highscores
 	for (int i = 0; i < 10; i++) {
-		fscanf(datei, "%d", &highscore[i].score);	// holt Score aus Datei (hoert bei ' ' auf)
+		// Punktezahl einlesen
+		fscanf(datei, "%d", &highscore[i].score);
 		a = 0;
 
-		//	holt Leerzeichen
+		// Leerzeichen einlesen und direkt mit dem naechsten Buchstaben ueberschreiben
 		fscanf(datei, "%c", &highscore[i].name[a]);
 		while (highscore[i].name[a] == ' ') {
 			fscanf(datei, "%c", &highscore[i].name[a]);
 		}
 
-		//	Scanned den Namen ein
+		// Name einlesen
 		while (highscore[i].name[a] != '\n' && !feof(datei)) {
 			a++;
 			fscanf(datei, "%c", &highscore[i].name[a]);
 		}
 	}
 
-	sortHighscore(highscore);	//	Sortiere das Struct array (qsort)
+	// Sortieren der eingelesenen Daten mit qsort
+	sortHighscore(highscore);
 
-	// Schreibe neue Highscores in Datei
+	// Schreibe neue Highscoreliste in Datei
 	fseek(datei, 0, SEEK_SET);
 
 	for (int i = 0; i < 10; i++) {
 		fprintf(datei, "%d %s", highscore[i].score, highscore[i].name);
 	}
 
+	// Datei schliessen
 	fclose(datei);
 }
 
+// Ueberpruefe, ob die erreichte Punktzahl ueber dem Minimum in der Highscoreliste ist
 int checkHighscore(int score) {
-	// Schaue nach ob der erreichte Score ueberhaupt ein Highscoe ist, d.h. in Highscore angezeigt werden soll
+	// Oeffne Datei mit Leserechten
 	FILE* datei = fopen("Highscore.txt", "r");
+
 	int lowestScore = 1000;
 	int zahl[10];
 	int i = 0;
 	char buffer;
 
-	// Suche den kleinsten Score
+	// Pruefe, ob datei geoeffnet werden konnte
+	if (!datei) {
+		clrscr();
+		gotoxy(0, 0);
+		print("Datei kann nicht geoeffnet werden!\n");
+		sysPause();
+		return 0;
+	}
+
+	// Suche die niedrigste Punktzahl
 	while (!feof(datei)) {
 		fscanf(datei, "%d", &zahl[i]);
 		buffer = 0;
@@ -1488,21 +1491,26 @@ int checkHighscore(int score) {
 		i++;
 	}
 
+	// Datei schliessen
 	fclose(datei);
 
-	// ist erreichter Score groesser als der niedrigste in der Liste
+	// Vergleiche erreichte Punktzahl mit dem niedrigsten Highscore
 	if (score > lowestScore) {
-		return 1;	// Ja
+		// erreichte Punktzahlk ist groesser
+		return 1;
 	}
 
-	return 0;	//	Nein
+	// erreichte Punktzahlk ist kleiner
+	return 0;
 }
 
+// Highscoreliste sortieren
 void sortHighscore(str_highscore* highscore) {
-	qsort(highscore, 11, sizeof(*highscore), compareScore);	
+	qsort(highscore, 11, sizeof(*highscore), compareScore);
 }
 
-int compareScore(const void* a, const void* b) { //	Funktion fuer qsort: sortiere nach hoechsten Score
+// Zwei Elemente aus der Highscoreliste miteinander fuer qsort vergleichen (sortiere absteigend)
+int compareScore(const void* a, const void* b) {
 	str_highscore player1 = *(str_highscore*)a;
 	str_highscore player2 = *(str_highscore*)b;
 
