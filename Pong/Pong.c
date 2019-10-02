@@ -1319,7 +1319,7 @@ void spielende() {
 	clrscr();
 
 	// Konsolengroesse zuruecksetzen
-	CONSOLE_HEIGHT = 30;
+	CONSOLE_HEIGHT = 32;
 	CONSOLE_WIDTH = 100;
 
 	setWindowSize(CONSOLE_WIDTH, CONSOLE_HEIGHT);
