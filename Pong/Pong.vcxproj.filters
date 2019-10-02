@@ -23,5 +23,8 @@
     <Text Include="Highscore.txt">
       <Filter>Quelldateien</Filter>
     </Text>
+    <Text Include="Readme.txt">
+      <Filter>Quelldateien</Filter>
+    </Text>
   </ItemGroup>
 </Project>
