@@ -65,9 +65,6 @@ const char PLAYER_TOP = '=';
 const char PLAYER_BOT = '=';
 #endif
 
-// Gleich in Windows und Linux
-#define EXIT_BUTTON 27 // ESC	TODO
-
 // Konsolengroesse (am besten gerade, damit Ball in der Mitte starten kann)
 int CONSOLE_WIDTH = 100;
 int CONSOLE_HEIGHT = 32; // Spielfeld + Header
@@ -106,7 +103,6 @@ void updateBall(str_ball* ball);
 void collisionWall(str_ball* ball);
 int collisionPlayer(str_ball* ball, str_player* player);
 void moveBall(str_ball* ball, str_player* player);
-//char waitForAnyKey();
 void printUpdatedPlayer(str_player* player, int id);
 void printScore(int score1, int score2);
 void startscreen();
@@ -132,6 +128,9 @@ void addHighscore(int score);
 int checkHighscore(int score);
 int compareScore(const void* a, const void* b);
 void sortHighscore(str_highscore* highscore);
+int getGeschwindigkeit();
+int setGeschwindigkeit();
+
 // ============================================= MAIN ====================================================================== //
 
 int main() {
@@ -159,9 +158,9 @@ int main() {
 	// Startbildschirm
 	startscreen();
 
-	int exit = 0;
+	int running = 1;
 
-	while (exit == 0) {
+	while (running == 1) {
 		switch (mainMenu()) {
 		case 0:	// New Game
 			loadGame();
@@ -170,7 +169,7 @@ int main() {
 			printHighscore();
 			break;
 		case 2:	// Exit
-			exit = exitYN();
+			running = exitgame();
 			break;
 		}
 	}
@@ -408,28 +407,20 @@ void setWindowTitle() {
 
 // Cursor ausschalten
 void hideCursor() {
-	// TODO >> Cursor unsichtbar machen
+	curs_set(0);
 }
 
 // Tastendruck abfragen
 int checkKeysPressed() {
-	int pressed;
+	int pressed = 0;
 
 	// Tastendruck abfragen (-1, wenn keine Taste gedrueckt)
 	pressed = getch();
-
-	if (pressed != EXIT_BUTTON) {
-
-		// Key buffer leeren
-		flushinp();
-
-		return pressed;
-	}
-
+	
 	// Key buffer leeren
 	flushinp();
 
-	return 0;
+	return pressed;
 }
 
 // Spielerposition aktualisieren
@@ -528,6 +519,8 @@ void gotoxy(int x, int y) {
 
 // Pause (Press any key to continue...)
 void sysPause() {
+	print("Druecken Sie eine beliebige Taste...");
+
 	while (getch() == -1) {
 		usleep(100);
 	}
@@ -897,14 +890,6 @@ void moveBall(str_ball* ball, str_player* player) {
 	}
 }
 
-// system(pause);
-/*char getkwaitForAnyKey() {
-	while (!kbhit()) {
-		// TODO >> evtl noch interrupt einfuegen
-	}
-	return getch();
-}*/
-
 // Neue Spielerposition zeichnen und alte loeschen
 void printUpdatedPlayer(str_player* player, int id) {
 	switch (id) {
@@ -978,7 +963,6 @@ void loadGame() {
 	int score1 = 0;
 	int score2 = 0;
 	int gameover = 0;
-	int speed = 1000;
 
 	// Linux -- Startzeit festlegen
 #if !defined(_WIN32)
@@ -992,23 +976,25 @@ void loadGame() {
 	int grosse = setmapgrosse();
 
 	// Schwierigkeitsgrad
-	int difficulty = setschwierigkeitsgrad(player, grosse);
+	setschwierigkeitsgrad(player, grosse);
+
+	// Geschwindigkeit
+	int speed = setGeschwindigkeit();
 
 	// Spielerposition
 	player[0].pos = (CONSOLE_WIDTH - player[0].length) / 2;
 	player[1].pos = (CONSOLE_WIDTH - player[1].length) / 2;
-	// TODO >> player.length gerade/ ungerade (Spielfeldbreite ungerade -> Ball in der Mitte, aber Spieler nicht)
 
-	// Ballposition TODO
+	// Ballposition
 		// Debug
-	ball.x = 50;
-	ball.y = 10;
-	ball.dest = 0;
+	//ball.x = 50;
+	//ball.y = 10;
+	//ball.dest = 0;
 	
 		// Release
-	// ball.x = 1 + (CONSOLE_WIDTH - 2) / 2;
-	// ball.y = HEADER_HEIGHT + (CONSOLE_HEIGHT - HEADER_HEIGHT) / 2;
-	// ball.dest = rand() % 12;
+	ball.x = 1 + (CONSOLE_WIDTH - 2) / 2;
+	ball.y = HEADER_HEIGHT + (CONSOLE_HEIGHT - HEADER_HEIGHT) / 2;
+	ball.dest = rand() % 12;
 
 	// Spielfeld zeichnen
 	printSpielfeld(player, &ball, score1, score2);
@@ -1151,7 +1137,7 @@ void startscreen() {
 	gotoxy((CONSOLE_WIDTH / 2) - 13, (CONSOLE_HEIGHT / 2) + 1);
 	print("|_|                |___/ \n");
 
-	gotoxy((CONSOLE_WIDTH / 2) - 13, (CONSOLE_HEIGHT / 2) + 2);
+	gotoxy((CONSOLE_WIDTH / 2) - 13, (CONSOLE_HEIGHT / 2) + 3);
 
 	// Warte auf Benutzereingabe
 	sysPause();
@@ -1179,24 +1165,7 @@ int exitgame() {
 	
 	selected = menuSelector(x, y, yStart);
 
-	return selected;
-}
-
-// Spiel beenden
-// TODO >> exitYN eigentlich ueberfluessig
-int exitYN() {
-	clrscr();
-
-	int ende = exitgame();
-
-	if (ende == 0) {
-		// Konsole leeren
-		clrscr();
-
-		return 1;
-	}
-
-	return 0;
+	return selected;	// 0 bei Ja, 1 bei Nein
 }
 
 // Schwierigkeitsgrad auswaehlen
@@ -1239,7 +1208,7 @@ int getmapgrosse() {
 
 	// Menue Text
 	gotoxy(x - 3, y - 1);
-	print("Waehle deine Map groesse");
+	print("Waehle deine Spielfeldgroesse");
 	gotoxy(x, y++);
 	print("klein\n");
 	gotoxy(x, y++);
@@ -1344,7 +1313,7 @@ void spielende() {
 	gotoxy((CONSOLE_WIDTH / 2) - 27, (CONSOLE_HEIGHT / 2) + 1);
 	print("  \\_____|\\__,_|_| |_| |_|\\___|  \\____/  \\_/ \\___|_|  \n");
 
-	gotoxy((CONSOLE_WIDTH / 2) - 13, (CONSOLE_HEIGHT / 2) + 2);
+	gotoxy((CONSOLE_WIDTH / 2) - 13, (CONSOLE_HEIGHT / 2) + 3);
 
 	// Warte auf Benutzereingabe
 	sysPause();
@@ -1365,6 +1334,12 @@ void printHighscore() {
 	if (!datei) {
 		gotoxy(0, 0);
 		print("Datei kann nicht geoeffnet werden!\n");
+
+		// Linux -- ncurses (ansonsten wird nichts auf dem Bildschirm ausgegeben)
+#if !defined(_WIN32)
+		refresh();
+#endif
+
 		sysPause();
 		return;
 	}
@@ -1386,7 +1361,12 @@ void printHighscore() {
 		fgets(text, 25, datei);
 	}	//	vermeidet Fehler, da sich in der Datei elf Zeilen befinden, aber nur zehn mit Text befuellt sind
 
-	print("\n\n");
+	print("\n");
+
+	// Linux -- ncurses (ansonsten wird nichts auf dem Bildschirm ausgegeben)
+#if !defined(_WIN32)
+	refresh();
+#endif
 
 	// Warte auf Benutzereingabe
 	sysPause();
@@ -1397,6 +1377,14 @@ void printHighscore() {
 
 // Neuen Highscore hinzufuegen
 void addHighscore(int score) {
+	// Linux -- ncurses (damit Eingabe wieder sichtabr wird)
+#if !defined(_WIN32)
+	curs_set(1);
+	echo();
+	nodelay(stdscr, FALSE);
+	keypad(stdscr, FALSE);
+#endif
+
 	// Oeffne Datei mit Lese- und Schreibrechten
 	FILE* datei = fopen("Highscore.txt", "r+");
 
@@ -1410,15 +1398,32 @@ void addHighscore(int score) {
 	if (!datei) {
 		gotoxy(0, 0);
 		print("Datei kann nicht geoeffnet werden!\n");
+
+		// Linux -- ncurses (ansonsten wird nichts auf dem Bildschirm ausgegeben)
+#if !defined(_WIN32)
+		refresh();
+#endif
+
 		sysPause();
 		return;
 	}
 
 	// Neuer Highscore: Benutzereingabe
 	gotoxy(7, 4);
-	print("Bitte Namen eingeben (max 20 Zeichen, kein Leerzeichen):");
-	//gotoxy(7, 5);
+	print("Bitte Namen eingeben (max 20 Zeichen, kein Leerzeichen):\n");
+
+	// Linux -- ncurses (ansonsten wird nichts auf dem Bildschirm ausgegeben)
+#if !defined(_WIN32)
+	refresh();
+#endif
+
+#if defined(_WIN32)
+	gotoxy(0, 1);
 	scanf(" %20s", highscore[10].name);
+#else
+	gotoxy(7, 5);
+	getnstr(highscore[10].name, 20);
+#endif
 
 	highscore[10].name[strlen(highscore[10].name)] = '\n';
 	highscore[10].score = score;
@@ -1454,6 +1459,14 @@ void addHighscore(int score) {
 
 	// Datei schliessen
 	fclose(datei);
+
+	// Linux -- ncurses (Eingabe wieder unsichtbar)
+#if !defined(_WIN32)
+	curs_set(0);
+	noecho();
+	nodelay(stdscr, TRUE);
+	keypad(stdscr, TRUE);
+#endif
 }
 
 // Ueberpruefe, ob die erreichte Punktzahl ueber dem Minimum in der Highscoreliste ist
@@ -1517,4 +1530,52 @@ int compareScore(const void* a, const void* b) {
 	if (player1.score < player2.score) return 1;
 	if (player1.score > player2.score) return -1;
 	return 0;
+}
+
+// Geschwindigkeit auswaehlen
+int getGeschwindigkeit() {
+	// vgl. MainMenu
+	int x = 10, y = 5;
+	int yStart = y;
+
+	int selected;
+
+	// Konsole leeren
+	clrscr();
+
+	// Menue Text
+	gotoxy(x - 3, y - 1);
+	print("Waehle deine Geschwindigkeit");
+	gotoxy(x, y++);
+	print("langsam");
+	gotoxy(x, y++);
+	print("mittel");
+	gotoxy(x, y++);
+	print("schnell");
+	gotoxy(x, y++);
+
+	selected = menuSelector(x, y, yStart);
+
+	return selected;
+}
+
+// Spielfeldgroesse festlegen
+int setGeschwindigkeit() {
+	// Benutzer waehlt Geschwindigkeit
+	int selected = getGeschwindigkeit();
+	int speed = 1000;
+
+	switch (selected) {
+	case 0:
+		speed = 600;
+		break;
+	case 1:
+		speed = 400;
+		break;
+	case 2:
+		speed = 200;
+		break;
+	}
+
+	return speed;
 }
