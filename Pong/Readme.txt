@@ -120,7 +120,7 @@ Die Option -Werror darf NICHT verwendet werden, da usleep eine Warnung ausgibt, 
 Die Option -lncurses muss noch am Schluss des Compiler-Aufrufs hinzugefuegt werden, um die "curses.h" Bibliothek zu verwenden. Diese muss auch
 seperat installiert werden: https://www.cyberciti.biz/faq/linux-install-ncurses-library-headers-on-debian-ubuntu-centos-fedora/
 
-Das beigefuegte Skript cr_ncurses ist eine abgeaenderte Version des im Kurs zur verfuegung gestellten Skripts mit eben genau diesen Aenderungen.
+Das beigefuegte Skript cr_ncurses ist eine abgeaenderte Version des im Kurs zur Verfuegung gestellten Skripts mit eben genau diesen Aenderungen.
 
 #####################################################################################################################################################
 

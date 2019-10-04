@@ -107,7 +107,6 @@ void printUpdatedPlayer(str_player* player, int id);
 void printScore(int score1, int score2);
 void startscreen();
 void loadGame();
-int exitYN();
 int menuSelector(int x, int y, int yStart);
 int mainMenu();
 void spielende();
