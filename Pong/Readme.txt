@@ -69,3 +69,73 @@ Hier bewegt sich der Ball von unten rechts nach oben links mit der Richtung 9. N
 sich nun von links unten nach rechts oben mit der Richtung 2.
 
 #####################################################################################################################################################
+
+Windows-/ Linux-Kompatibilitaet:
+
+Der Code kann sowohl unter Windows, als auch unter Linux kompiliert werden. Hierzu sind die Funktionen, die OS-spezifisch sind, doppelt geschrieben
+und auf das jeweilige Betriebssystem angepasst.
+
+Dies fuehrt allerdings zu leichten Unterschieden:
+
+1. Zeichen
+Die verwendeten Zeichen sind fuer Windows und Linux unterschiedlich.
+
+2. Tastendruckerkennung
+Unter Windows kann mit der Funktion GetKeyState() aus der Bibliothek "Windows.h" direkt abgefragt werden, ob die spezifizierte Taste gedrueckt ist
+oder nicht. Somit koennen auch mehrere gleichzeitige Tastendruecke erkannt werden und beide Spieler koennen ihre Schlaeger simultan bewegen. Dies
+ist in Linux nicht der Fall. In Linux wird hier die Bibliothek "curses.h" (auch ncurses genannt) verwendet. Diese beinhalet die Funktion getch(),
+welche die zuletzt gedrueckte Taste zurueckgibt. Dies hat allerdings den Nachteil, dass nur ein Tastendruck erkannt werden kann. Zusaetzlich muss
+hier immer der Keybuffer geleert werden, da ansonsten immer alle Tastenanschlaege ausgefuehrt werden und nicht nur der aktuelle, was zu sehr
+verzoegerten Inputs fuehrt.
+Da Windows mehrere simultane Tastendruecke erkennen kann, werden diese in einem Array gespeichert und die Funktionen, die die Tastendruecke
+verarbeiten muessen somit auch fuer Windows und Linux extra geschrieben werden.
+
+3. Konsole
+Die Windows-Konsole ist anders zu manipulieren, als eine Linux-Konsole. Somit sind die Funktionen SetWindowSize(), SetWindowTitle(), clrscr() und
+hideCursor() OS-spezifisch. Unter Windows bietet die Bibliothek "Windows.h" Moeglichkeiten die Groesse und den Titel Konsole zu veraendern. Auch
+kann damit der blinkende Cursor ausgeschaltet werden. Die Funktion clrscr() besteht nur aus dem Befehl system("cls"), welcher die Konsole leert.
+Unter Linux defieniert die "curses.h" Bibliothek die Funktion clear() und refresh(). Die Funktion gotoxy() setzt den Cursor an die angegebene
+Position. Diese wird unter Windows mit Hilfe der "Windows.h" Bibliothek definiert, unter Linux verwendet diese die Funktion move() aus der
+"curses.h" Bibliothek. Auch die Ausgabe auf der Konsole muss extra behandelt werden, denn unter Linux muss die Konsole auf raw input gesetzt werden,
+um Tastendruecke zu erkennen, ohne diese sofort auf dem Bildschirm auszugeben. Somit funktioniert allerdings die Funktion printf() nicht mehr und es
+muss stattdessen printw() verwendet werden. Da der Syntax genau gleich ist, wurden beide Funktionen unter print() zusammengefasst.
+
+4. Etc
+Die Funktion sysPause() soll auf einen Tastendruck erwarten. Unter windows wird dies durch system("pause") erreicht, unter Linux durch Warten auf
+einen Tastendruck mit getch().
+Unter Windows gibt es den Befehl Sleep(), welcher den Prozess fuer die angegebene Zeit (in Millisekunden) pausiert und somit bei Endlosschleifen
+eine hohe CPU-Auslastung verhindert. Unter Linux wird hier die Funktion usleep() aus der "unistd.h" Bibliothek verwendet. Diese Funktion erwartet
+allerdings eine Eingabe in Mikrosekunden. Zusammengefasst wurden diese beiden Funktionen unter sysPause().
+
+#####################################################################################################################################################
+
+Kompilieren unter Linux:
+
+Beim kompilieren unter Linux sind einige Besonderheiten zu beachten:
+
+1. -Werror
+Die Option -Werror darf NICHT verwendet werden, da usleep eine Warnung ausgibt, fuer die wir keine Loesung gefunden haben.
+
+2. -lncurses
+Die Option -lncurses muss noch am Schluss des Compiler-Aufrufs hinzugefuegt werden, um die "curses.h" Bibliothek zu verwenden. Diese muss auch
+seperat installiert werden: https://www.cyberciti.biz/faq/linux-install-ncurses-library-headers-on-debian-ubuntu-centos-fedora/
+
+Das beigefuegte Skript cr_ncurses ist eine abgeaenderte Version des im Kurs zur verfuegung gestellten Skripts mit eben genau diesen Aenderungen.
+
+#####################################################################################################################################################
+
+Sonstiges:
+
+Falls ein Kompilieren bei Ihnen icht moeglich sein sollte, oder wenn Sie wissen wollen, wie das Programm unter Windows aussehen wuerde, haben wir
+ein Paar Bilder beigefuegt.
+
+Damit die Highscore-Datei unter Linux richtig gelesen und ausgegeben werden kann, muessen die Zeilenumbrueche in dieser vom Typ LF sein. Wenn es die
+Windows-Zeilenumbrueche sind, also CR LF, dann kann die Datei zwar gelesen und beschrieben werden, allerdings werden bei der Auswahl von "Highscore"
+im Hauptmenue nur die Zeilen mit den korrekten Linux-Zeilenumbruechen, also LF, ausgegeben. Wenn die Datei also urspruenglich falsh formatiert sein
+sollte, werden nur neu hinzugefuegte Highscores ausgegeben.
+
+Falls das cr_ncurses Skript nicht funktionieren sollte, kann dies evtl. daran liegen, dass in diesem Windows-Zeilenumbrueche vorhanden sind. Da es
+allerdings Linux-Zeilenumbrueche sein muessen, muss die Datei evtl. neu formatiert werden. Unter Windows ist dies mit Notepad++ leicht umzustellen,
+allerdings wissen wir nicht wie dies unter Linux umzustellen ist.
+
+#####################################################################################################################################################
