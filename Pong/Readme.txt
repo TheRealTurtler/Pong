@@ -123,3 +123,19 @@ seperat installiert werden: https://www.cyberciti.biz/faq/linux-install-ncurses-
 Das beigefuegte Skript cr_ncurses ist eine abgeaenderte Version des im Kurs zur verfuegung gestellten Skripts mit eben genau diesen Aenderungen.
 
 #####################################################################################################################################################
+
+Sonstiges:
+
+Falls ein Kompilieren bei Ihnen icht moeglich sein sollte, oder wenn Sie wissen wollen, wie das Programm unter Windows aussehen wuerde, haben wir
+ein Paar Bilder beigefuegt.
+
+Damit die Highscore-Datei unter Linux richtig gelesen und ausgegeben werden kann, muessen die Zeilenumbrueche in dieser vom Typ LF sein. Wenn es die
+Windows-Zeilenumbrueche sind, also CR LF, dann kann die Datei zwar gelesen und beschrieben werden, allerdings werden bei der Auswahl von "Highscore"
+im Hauptmenue nur die Zeilen mit den korrekten Linux-Zeilenumbruechen, also LF, ausgegeben. Wenn die Datei also urspruenglich falsh formatiert sein
+sollte, werden nur neu hinzugefuegte Highscores ausgegeben.
+
+Falls das cr_ncurses Skript nicht funktionieren sollte, kann dies evtl. daran liegen, dass in diesem Windows-Zeilenumbrueche vorhanden sind. Da es
+allerdings Linux-Zeilenumbrueche sein muessen, muss die Datei evtl. neu formatiert werden. Unter Windows ist dies mit Notepad++ leicht umzustellen,
+allerdings wissen wir nicht wie dies unter Linux umzustellen ist.
+
+#####################################################################################################################################################
