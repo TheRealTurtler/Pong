@@ -129,6 +129,19 @@
     <Text Include="Highscore.txt" />
     <Text Include="Readme.txt" />
   </ItemGroup>
+  <ItemGroup>
+    <Image Include="Bilder\Beenden.png" />
+    <Image Include="Bilder\GameOver.png" />
+    <Image Include="Bilder\Geschwindigkeit.png" />
+    <Image Include="Bilder\Hauptmenue.png" />
+    <Image Include="Bilder\Highscore hinzufuegen.png" />
+    <Image Include="Bilder\Highscore.png" />
+    <Image Include="Bilder\Schwierigkeitsgrad.png" />
+    <Image Include="Bilder\Spiel Linux.png" />
+    <Image Include="Bilder\Spiel Windows.png" />
+    <Image Include="Bilder\Spielfeldgroesse.png" />
+    <Image Include="Bilder\Start.png" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
