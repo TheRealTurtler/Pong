@@ -1,4 +1,4 @@
-/*	Code von Michael Diedler (Matr. Nr. 2020406) und Kai Frisch (Matr. Nr. 2033963)
+/*	Code von Michael Diedler und Kai Frisch
 	Anfaenge wurden aus dem Snake-Code uebernommen, sind aber stark abgeaendert worden
 	Sonstige Quellen sind im Code vermerkt
 	Bitte lesen Sie unser Readme, um die Logik hinter dem Spiel besser zu verstehen,
