@@ -13,10 +13,56 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Quelldateien\Bilder">
+      <UniqueIdentifier>{fc62cd99-c671-4692-b71e-5a172359032f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Pong.c">
       <Filter>Quelldateien</Filter>
     </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="Highscore.txt">
+      <Filter>Quelldateien</Filter>
+    </Text>
+    <Text Include="Readme.txt">
+      <Filter>Quelldateien</Filter>
+    </Text>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="Bilder\Beenden.png">
+      <Filter>Quelldateien\Bilder</Filter>
+    </Image>
+    <Image Include="Bilder\GameOver.png">
+      <Filter>Quelldateien\Bilder</Filter>
+    </Image>
+    <Image Include="Bilder\Geschwindigkeit.png">
+      <Filter>Quelldateien\Bilder</Filter>
+    </Image>
+    <Image Include="Bilder\Hauptmenue.png">
+      <Filter>Quelldateien\Bilder</Filter>
+    </Image>
+    <Image Include="Bilder\Highscore hinzufuegen.png">
+      <Filter>Quelldateien\Bilder</Filter>
+    </Image>
+    <Image Include="Bilder\Highscore.png">
+      <Filter>Quelldateien\Bilder</Filter>
+    </Image>
+    <Image Include="Bilder\Schwierigkeitsgrad.png">
+      <Filter>Quelldateien\Bilder</Filter>
+    </Image>
+    <Image Include="Bilder\Spiel Linux.png">
+      <Filter>Quelldateien\Bilder</Filter>
+    </Image>
+    <Image Include="Bilder\Spiel Windows.png">
+      <Filter>Quelldateien\Bilder</Filter>
+    </Image>
+    <Image Include="Bilder\Spielfeldgroesse.png">
+      <Filter>Quelldateien\Bilder</Filter>
+    </Image>
+    <Image Include="Bilder\Start.png">
+      <Filter>Quelldateien\Bilder</Filter>
+    </Image>
   </ItemGroup>
 </Project>
