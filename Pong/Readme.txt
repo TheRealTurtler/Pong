@@ -13,7 +13,7 @@ von Michael Diedler (Matr. Nr. 2020406) und Kai Frisch (Matr. Nr. 2033963)
 
 Spielanleitung:
 
-Das Spielprinzip ist relativ selbsterklaerend: 2 Spieler versuchen einen Ball mithilfe ihres Schlaegers im Spielfeld zu halten. Fuer jeden
+Das Spielprinzip ist relativ selbsterklaerend: 2 Spieler versuchen einen Ball mit Hilfe ihrer Schlaeger im Spielfeld zu halten. Fuer jeden
 zurueckgeschlagenen Ball gibt es fuer den entsprechenden Spieler einen Punkt. Verfehlt der Ball einen Schlaeger und fliegt ins Aus, so ist das Spiel
 vorbei und der Spieler mit der hoechsten Punktzahl kann sich (sofern die erreichte Punktzahl hoch genug ist) in die Highscoreliste eintragen.
 
@@ -49,10 +49,11 @@ Die Aufteilung fuer Spieler 1 und einen Ball, der sich von links unten nach rech
 ===|===|===|===|===
  3   4   5   4   3
 
-Hierbei stellt '=' den Schlaeger dar und '|' die unterteilung der einzelnen Segmente (diese ist im Spiel nicht zu sehen). Die Zahlen darunter
-geben die Richtung an, die der Ball bei beruehrung mit dem jeweiligen Segment einschlaegt.
+Hierbei stellt '=' den Schlaeger dar und '|' die Unterteilung der einzelnen Segmente (diese ist im Spiel nicht zu sehen). Die Zahlen darunter
+geben die Richtung an, die der Ball bei Beruehrung mit dem jeweiligen Segment einschlaegt.
 
-Bewegt sich der Ball nun von rechts unten nach links oben, dann wuerde die Richtungsaenderung des Balls folgendermassen aussehen (Spieler 2 analog):
+Bewegt sich der Ball nun von rechts unten nach links oben (also Richtung 9, 10, 11), dann wuerde die Richtungsaenderung des Balls folgendermassen
+aussehen (Spieler 2 analog):
 
 ===|===|===|===|===
  8   7   6   7   8
@@ -88,7 +89,7 @@ welche die zuletzt gedrueckte Taste zurueckgibt. Dies hat allerdings den Nachtei
 hier immer der Keybuffer geleert werden, da ansonsten immer alle Tastenanschlaege ausgefuehrt werden und nicht nur der aktuelle, was zu sehr
 verzoegerten Inputs fuehrt.
 Da Windows mehrere simultane Tastendruecke erkennen kann, werden diese in einem Array gespeichert und die Funktionen, die die Tastendruecke
-verarbeiten muessen somit auch fuer Windows und Linux extra geschrieben werden.
+verarbeiten, muessen somit auch fuer Windows und Linux extra geschrieben werden.
 
 3. Konsole
 Die Windows-Konsole ist anders zu manipulieren, als eine Linux-Konsole. Somit sind die Funktionen SetWindowSize(), SetWindowTitle(), clrscr() und
@@ -101,7 +102,7 @@ um Tastendruecke zu erkennen, ohne diese sofort auf dem Bildschirm auszugeben. S
 muss stattdessen printw() verwendet werden. Da der Syntax genau gleich ist, wurden beide Funktionen unter print() zusammengefasst.
 
 4. Etc
-Die Funktion sysPause() soll auf einen Tastendruck erwarten. Unter windows wird dies durch system("pause") erreicht, unter Linux durch Warten auf
+Die Funktion sysPause() soll auf einen Tastendruck warten. Unter Windows wird dies durch system("pause") erreicht, unter Linux durch Warten auf
 einen Tastendruck mit getch().
 Unter Windows gibt es den Befehl Sleep(), welcher den Prozess fuer die angegebene Zeit (in Millisekunden) pausiert und somit bei Endlosschleifen
 eine hohe CPU-Auslastung verhindert. Unter Linux wird hier die Funktion usleep() aus der "unistd.h" Bibliothek verwendet. Diese Funktion erwartet
@@ -120,14 +121,14 @@ Die Option -Werror darf NICHT verwendet werden, da usleep eine Warnung ausgibt, 
 Die Option -lncurses muss noch am Schluss des Compiler-Aufrufs hinzugefuegt werden, um die "curses.h" Bibliothek zu verwenden. Diese muss auch
 seperat installiert werden: https://www.cyberciti.biz/faq/linux-install-ncurses-library-headers-on-debian-ubuntu-centos-fedora/
 
-Das beigefuegte Skript cr_ncurses ist eine abgeaenderte Version des im Kurs zur Verfuegung gestellten Skripts mit eben genau diesen Aenderungen.
+Das beigefuegte Skript cr_ncurses ist eine abgeaenderte Version des im Kurs zur Verfuegung gestellten cr Skripts mit eben genau diesen Aenderungen.
 
 #####################################################################################################################################################
 
 Sonstiges:
 
-Falls ein Kompilieren bei Ihnen icht moeglich sein sollte, oder wenn Sie wissen wollen, wie das Programm unter Windows aussehen wuerde, haben wir
-ein Paar Bilder beigefuegt.
+Falls ein Kompilieren bei Ihnen nicht moeglich sein sollte, oder wenn Sie wissen wollen, wie das Programm unter Windows aussehen wuerde, haben wir
+ein paar Bilder beigefuegt.
 
 Damit die Highscore-Datei unter Linux richtig gelesen und ausgegeben werden kann, muessen die Zeilenumbrueche in dieser vom Typ LF sein. Wenn es die
 Windows-Zeilenumbrueche sind, also CR LF, dann kann die Datei zwar gelesen und beschrieben werden, allerdings werden bei der Auswahl von "Highscore"

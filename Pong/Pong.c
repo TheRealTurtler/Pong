@@ -19,12 +19,12 @@
 #include <string.h>
 
 #if defined(_WIN32)
-// Windows Libraries
+// Windows Bibliotheken
 #include <conio.h>
 #include <windows.h>
 
 // Windows Konstanten
-// Controls
+// Steuerung
 #define LEFT_ARROW VK_LEFT
 #define RIGHT_ARROW VK_RIGHT
 #define UP_ARROW VK_UP
@@ -39,18 +39,19 @@ const char PLAYER_TOP = (char)220;
 const char PLAYER_BOT = (char)223;
 
 #else	// Linux
-// Linux Libraries
+// Linux Bibliotheken
 #include <stdlib.h>
 #include <termios.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/time.h>
 
+// Anleitung fuer ncurses: http://openbook.rheinwerk-verlag.de/linux_unix_programmierung/Kap13-002.htm
 #include <curses.h>
 
-// Linux Constants
+// Linux Konstanten
 
-// Controls
+// Steuerung
 #define LEFT_ARROW 260
 #define RIGHT_ARROW 261
 #define UP_ARROW 259
@@ -74,6 +75,7 @@ int HEADER_HEIGHT = 2;
 
 // ============================================= STRUCTS =================================================================== //
 
+// Ball
 typedef struct {
 	int x;
 	int prev_x;
@@ -82,12 +84,14 @@ typedef struct {
 	int dest;
 }str_ball;
 
+// Spieler
 typedef struct {
 	int length;
 	int pos;
 	int prev_pos;
 }str_player;
 
+// Eintrag Highscore
 typedef struct {
 	int score;
 	char name[21];
@@ -203,7 +207,6 @@ void setWindowSize(int width, int height) {
 
 	HANDLE Handle = GetStdHandle(STD_OUTPUT_HANDLE);
 
-	//coord = GetLargestConsoleWindowSize(Handle);
 	SetConsoleScreenBufferSize(Handle, coord);				// Textbuffergroesse setzen (kein Scrollbalken)
 	SetConsoleWindowInfo(Handle, TRUE, &windowSize);		// Fenstergroesse setzen
 
@@ -211,8 +214,6 @@ void setWindowSize(int width, int height) {
 	HWND hwnd = GetConsoleWindow();
 	DWORD style = GetWindowLong(hwnd, GWL_STYLE);
 	style &= ~WS_MAXIMIZEBOX;
-	style &= ~WS_HSCROLL;
-	style &= ~WS_VSCROLL;
 	SetWindowLong(hwnd, GWL_STYLE, style);
 	SetWindowPos(hwnd, NULL, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE | SWP_FRAMECHANGED | SWP_NOZORDER | SWP_SHOWWINDOW);
 }
@@ -534,7 +535,7 @@ void printPlayer(str_player* player, int id) {
 	// linke Wand
 	print("%c", WALL);
 
-	// blank space bis player
+	// BLANK bis Spieler
 	for (int i = 1; i < player[id].pos; i++) {
 		print("%c", BLANK);
 	}
@@ -553,7 +554,7 @@ void printPlayer(str_player* player, int id) {
 		}
 	}
 
-	// blank space bis rechte Wand
+	// BLANK bis rechte Wand
 	for (int i = player[id].pos + player[id].length; i < CONSOLE_WIDTH; i++) {
 		print("%c", BLANK);
 	}
@@ -567,7 +568,7 @@ void printOhneBall() {
 	// linke Wand
 	print("%c", WALL);
 
-	// blank bis rechte Wand
+	// BLANK bis rechte Wand
 	for (int j = 0; j < CONSOLE_WIDTH - 1; j++) {
 		print("%c", BLANK);
 	}
@@ -614,7 +615,7 @@ void printSpielfeld(str_player* player, str_ball* ball, int score1, int score2) 
 	moveBall(ball, player);
 }
 
-// Pallposition aktualisieren
+// Ballposition aktualisieren
 void updateBall(str_ball* ball) {
 	// alte Koordinaten speichern
 	ball->prev_x = ball->x;
@@ -1088,29 +1089,6 @@ int mainMenu() {
 	return selected;
 }
 
-//	Alternatives ASCII Art
-/*void startscreen(){
-	//	ASCII Art Quelle: http://pong.ascii.uk/
-	clrscr();
-
-	for(int i=0; i<((CONSOLE_HEIGHT/2)-6); i++){
-	print("\n");
-	}
-
-	print("\t\t\t88888b.  .d88b. 88888b.  .d88b.  \n");
-	print("\t\t\t888 \"88bd88\"\"88b888 \"88bd88P\"88b\n");
-	print("\t\t\t888  888888  888888  888888  888 \n");
-	print("\t\t\t888 d88PY88..88P888  888Y88b 888 \n");
-	print("\t\t\t88888P\"  \"Y88P\" 888  888 \"Y88888 \n");
-	print("\t\t\t888                          888 \n");
-	print("\t\t\t888                     Y8b d88P \n");
-	print("\t\t\t888                      \"Y88P\"  \n");
-	print("\t\t\tDruecke irgendeinen Key...... ");
-
-	sytem("pause");
-	return;
-}*/
-
 // Startbildschirm
 void startscreen() {
 	// ASCII Art Quelle: http://pong.ascii.uk/
@@ -1229,7 +1207,7 @@ int setschwierigkeitsgrad(str_player* player, int grosse) {
 	// Spielerlaenge muss durch 5 teilbar sein, da wir diese in der Kollision in 5 Bereiche aufteilen
 	switch (difficulty) {
 	case 0:
-		player[0].length = (CONSOLE_WIDTH - 1) / 5;	// Schwiereigkeitsgrad nicht von Spielgroesse abhaengig
+		player[0].length = (CONSOLE_WIDTH - 1) / 5;			// Schwiereigkeitsgrad nicht von Spielfeldgroesse abhaengig
 		player[1].length = (CONSOLE_WIDTH - 1) / 5;
 		break;
 	case 1:
@@ -1238,7 +1216,7 @@ int setschwierigkeitsgrad(str_player* player, int grosse) {
 		break;
 	case 2:
 		if (grosse == 1) {
-			player[0].length = (CONSOLE_WIDTH - 1) / 15;	//Hier waere sonst Spieler Laenge 150/20 = 7.5!!!!!!!!!
+			player[0].length = (CONSOLE_WIDTH - 1) / 15;	// Hier waere sonst Spielerlaenge 150/20 = 7.5!
 			player[1].length = (CONSOLE_WIDTH - 1) / 15;
 		}
 		else {
@@ -1417,7 +1395,7 @@ void addHighscore(int score) {
 #endif
 
 #if defined(_WIN32)
-	gotoxy(0, 1);
+	gotoxy(0, 2);	// in Kombination mit scanf ist gotoxy nicht mehr absolut und der x-Wert wird ignoriert 
 	scanf(" %20s", highscore[10].name);
 #else
 	gotoxy(7, 5);
